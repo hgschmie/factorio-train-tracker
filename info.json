@@ -1,0 +1,28 @@
+{
+  "name": "train-tracker",
+  "version": "0.0.1",
+  "title": "Train Tracker",
+  "description": "Keeps track on how many miles your train has travelled",
+  "author": "hgschmie",
+  "contact": "https://github.com/hgschmie/factorio-train-tracker/issues",
+  "homepage": "https://github.com/hgschmie/factorio-train-tracker",
+  "factorio_version": "2.0",
+  "dependencies": [
+    "base >= 2.0.48"
+  ],
+  "package": {
+    "git_publish_branch": "main",
+    "readme": "README.md",
+    "sync_portal_details": true,
+    "ignore": [
+      "portal/*",
+      "releases/*",
+      "**/*.xcf",
+      "**/.zip",
+      ".git",
+      ".gitignore",
+      ".vscode",
+      ".DS_Store"
+    ]
+  }
+}
