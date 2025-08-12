@@ -285,4 +285,10 @@ function Math.is_unsigned(x)
     return x >= 0
 end
 
+---@param x number A number
+---#return result number 1 if the number is positive, -1 if the number is negative, 0 if the number is zero
+function Math.sign(x)
+    return (x > 0 and 1) or (x == 0 and 0) or -1
+end
+
 return Math
