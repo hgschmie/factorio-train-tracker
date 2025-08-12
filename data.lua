@@ -4,5 +4,8 @@
 
 require('lib.init')
 
+require('prototypes.hotkeys')
+require('prototypes.styles')
+
 ------------------------------------------------------------------------
 Framework.post_data_stage()
