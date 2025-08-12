@@ -10,6 +10,8 @@ local Constants = {
     root = '__train-tracker__',
 }
 
+Constants.gfx_location = Constants.root .. '/graphics/'
+
 --------------------------------------------------------------------------------
 -- Framework intializer
 --------------------------------------------------------------------------------
@@ -54,6 +56,84 @@ end
 
 -- Base name
 Constants.tt_name = Constants:with_prefix(Constants.name)
+
+Constants.hotkey_keys = { 'toggle_display' }
+Constants.hotkey_names = {}
+Constants.hotkey = {}
+
+for _, key in pairs(Constants.hotkey_keys) do
+    Constants.hotkey[key] = key
+    Constants.hotkey_names[key] = Constants:with_prefix(key)
+end
+
+--------------------------------------------------------------------------------
+-- other constants
+--------------------------------------------------------------------------------
+
+Constants.entity_types = {
+    trains = 'trains',
+    ships = 'ships',
+}
+
+Constants.ship_names = {
+    -- cargo-ships mod
+    ['boat_engine'] = true,
+    ['cargo_ship_engine'] = true,
+}
+
+---@enum tt.limit_dropdown
+Constants.limit_dropdown = {
+    all = 1,
+    show10 = 2,
+    show25 = 3,
+}
+
+Constants.limit_dropdown_values = { -1, 10, 25 }
+
+---@enum tt.filter_dropdown
+Constants.filter_dropdown = {
+    id = 1,
+    name = 2,
+    last_station = 3,
+    state = 4,
+}
+
+---@type (fun(train_info: tt.TrainInfo, entity_type: string?, player: LuaPlayer?): string?)[]
+Constants.filter_dropdown_values = {
+    function(train_info) return tostring(train_info.train_id) end,
+    function(train_info) return train_info.train_name end,
+    function(train_info) return train_info.last_station and train_info.last_station.backer_name or nil end,
+    function(train_info, entity_type, player)
+        local state = train_info.last_state
+        if not state then return nil end
+        local key = Constants.trainStateKey(train_info.last_state, entity_type)
+        return Framework.translation_manager:translate(player, Constants:locale(key))
+    end
+}
+
+---@param id number|defines.train_state
+---@param entity_type string
+function Constants.trainStateKey(id, entity_type)
+    return ('%s.train-state-%d'):format(entity_type, id)
+end
+
+--------------------------------------------------------------------------------
+-- sorting constants
+--------------------------------------------------------------------------------
+
+Constants.sorting = {}
+
+Constants.sorting = {
+    train_id = 'train-id',
+    train_name = 'train-name',
+    total_distance = 'total-distance',
+    total_runtime = 'total-runtime',
+    total_waittime = 'total-waittime',
+    stop_waittime = 'stop-waittime',
+    signal_waittime = 'signal-waittime',
+    last_station = 'last-station',
+    state = 'state',
+}
 
 --------------------------------------------------------------------------------
 -- settings

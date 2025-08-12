@@ -5,27 +5,44 @@ assert(script)
 
 local Event = require('stdlib.event.event')
 local Player = require('stdlib.event.player')
-local table = require('stdlib.utils.table')
-
-local Matchers = require('framework.matchers')
 
 local const = require('lib.constants')
 
 --------------------------------------------------------------------------------
--- entity create / delete
+-- event code
 --------------------------------------------------------------------------------
 
---------------------------------------------------------------------------------
--- Entity destruction
---------------------------------------------------------------------------------
+---@param event EventData.on_train_changed_state
+local function on_train_changed_state(event)
+    local train = event and event.train
+    if not train then return end
+
+    if train.state == defines.train_state.wait_station then
+        if not (train.station and train.station.valid) then return end
+        This.TrainTracker:trainArrived(train, event.old_state, event.tick)
+    elseif train.state == defines.train_state.wait_signal then
+        This.TrainTracker:trainArrived(train, event.old_state, event.tick)
+    elseif train.state == defines.train_state.on_the_path then
+        This.TrainTracker:trainDeparted(train, event.old_state, event.tick)
+    end
+end
 
 --------------------------------------------------------------------------------
--- Entity cloning
+-- translations
 --------------------------------------------------------------------------------
 
---------------------------------------------------------------------------------
--- Entity settings pasting
---------------------------------------------------------------------------------
+---@param player LuaPlayer
+local function register_translations(player)
+    local keys = {}
+
+    for _, entity_type in pairs(const.entity_types) do
+        for i = 0, 9 do
+            table.insert(keys, const:locale(const.trainStateKey(i, entity_type)))
+        end
+    end
+
+    Framework.translation_manager:registerTranslation(player, keys)
+end
 
 --------------------------------------------------------------------------------
 -- Configuration changes (startup)
@@ -33,6 +50,21 @@ local const = require('lib.constants')
 
 local function on_configuration_changed()
     This.TrainTracker:init()
+    This.TrainTracker:resync()
+end
+
+---@params event EventData.on_player_joined
+local function on_player_joined(event)
+    local player = Player.get(event.player_index)
+    if not player then return end
+
+    register_translations(player)
+end
+
+local function on_singleplayer_init()
+    for _, player in pairs(game.players) do
+        register_translations(player)
+    end
 end
 
 --------------------------------------------------------------------------------
@@ -42,6 +74,10 @@ end
 local function register_events()
     -- Configuration changes (startup)
     Event.on_configuration_changed(on_configuration_changed)
+    Event.register(defines.events.on_singleplayer_init, on_singleplayer_init)
+    Event.register(defines.events.on_player_joined_game, on_player_joined)
+
+    Event.register(defines.events.on_train_changed_state, on_train_changed_state)
 end
 
 --------------------------------------------------------------------------------
@@ -50,6 +86,7 @@ end
 
 local function on_init()
     This.TrainTracker:init()
+    This.TrainTracker:resync()
     register_events()
 end
 
