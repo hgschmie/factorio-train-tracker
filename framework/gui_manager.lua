@@ -33,7 +33,7 @@ local GUI_UPDATE_TICK_INTERVAL = 11
 ---@field ui_tree_provider fun(context: framework.gui): framework.gui.element_definitions
 ---@field existing_elements table<string, LuaGuiElement>? Optional set of existing GUI elements.
 ---@field context framework.gui.context? Context element
----@field entity_id number The entity for which a gui is created
+---@field entity_id number? The entity for which a gui is created
 
 ---@class framework.gui_manager.event_definition
 ---@field events table<string, framework.gui.element_handler>
@@ -161,13 +161,13 @@ function FrameworkGuiManager:create_gui(map)
 
     -- must be set
     assert(map.parent)
-    assert(map.entity_id)
 
     local gui = FrameworkGui.create {
         type = type,
         prefix = self.GUI_PREFIX,
         gui_events = table.array_to_dictionary(table.keys(gui_type.events)),
         entity_id = map.entity_id,
+        player_index = map.player_index,
         context = map.context or {},
     }
 
