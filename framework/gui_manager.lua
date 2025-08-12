@@ -87,14 +87,24 @@ function FrameworkGuiManager:dispatch(event)
 
     local event_handler_map = gui.event_handlers[event.name]
     assert(event_handler_map)
+
     local handler_id = event_handler_map[elem.name]
-
-    if not handler_id then return false end
-    local event_handler = gui_type.events[handler_id]
-
-    if not event_handler then return false end
-    event_handler(event, gui)
-    return true
+    if handler_id then
+        -- per-element registered handler
+        local event_handler = gui_type.events[handler_id]
+        if not event_handler then return false end
+        event_handler(event, gui)
+        return true
+    elseif type(elem.tags.handler) == 'table' then
+        -- tag defined handler table.
+        -- use per-element registered handler
+        handler_id = elem.tags.handler[event.name]
+        local event_handler = gui_type.events[handler_id]
+        if not event_handler then return false end
+        event_handler(event, gui)
+        return true
+    end
+    return false
 end
 
 ------------------------------------------------------------------------
