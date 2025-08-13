@@ -95,14 +95,26 @@ Constants.filter_dropdown = {
     id = 1,
     name = 2,
     last_station = 3,
-    state = 4,
+    next_station = 4,
+    state = 5,
 }
+---@param station (string|LuaEntity)?
+---@param default string?
+---@return string station_name
+function Constants.get_station_name(station, default)
+    if station then
+        if type(station) == 'string' then return station end
+        if station.valid then return station.backer_name end
+    end
+    return default
+end
 
 ---@type (fun(train_info: tt.TrainInfo, entity_type: string?, player: LuaPlayer?): string?)[]
 Constants.filter_dropdown_values = {
     function(train_info) return tostring(train_info.train_id) end,
     function(train_info) return train_info.train_name end,
-    function(train_info) return train_info.last_station and train_info.last_station.backer_name or nil end,
+    function(train_info) return Constants.get_station_name(train_info.last_station, '') end,
+    function(train_info) return Constants.get_station_name(train_info.next_station, '') end,
     function(train_info, entity_type, player)
         local state = train_info.last_state
         if not state then return nil end
@@ -124,14 +136,14 @@ end
 Constants.sorting = {}
 
 Constants.sorting = {
-    train_id = 'train-id',
-    train_name = 'train-name',
-    total_distance = 'total-distance',
-    total_runtime = 'total-runtime',
-    total_waittime = 'total-waittime',
-    stop_waittime = 'stop-waittime',
-    signal_waittime = 'signal-waittime',
-    last_station = 'last-station',
+    train_id = 'train_id',
+    train_name = 'train_name',
+    total_distance = 'total_distance',
+    total_runtime = 'total_runtime',
+    stop_waittime = 'stop_waittime',
+    signal_waittime = 'signal_waittime',
+    last_station = 'last_station',
+    next_station = 'next_station',
     state = 'state',
 }
 

@@ -5,10 +5,14 @@ assert(script)
 
 local const = require('lib.constants')
 
+-- load extended math lib
+local math = require('stdlib.utils.math')
+
 
 ---@class tt.TrainInfo
 ---@field last_state defines.train_state?
 ---@field last_station LuaEntity?
+---@field next_station (LuaEntity|string)?
 ---@field last_tick integer
 ---@field total_distance integer
 ---@field total_runtime integer
@@ -36,24 +40,78 @@ local TrainTracker = {
 ---@return LuaEntity? locomotive
 function TrainTracker.getMainLocomotive(train)
     if not train.valid then return nil end
-    return train.locomotives.front_movers and train.locomotives.front_movers[1] or train.locomotives.back_movers[1]
+    return #train.locomotives.front_movers > 0 and train.locomotives.front_movers[1] or train.locomotives.back_movers[1]
 end
 
 ---@param train LuaTrain
 ---@return string? name
 local function get_train_name(train)
     local loco = TrainTracker.getMainLocomotive(train)
-    return loco and loco.backer_name or nil
+    return (loco and loco.valid) and loco.backer_name or nil
+end
+
+
+---@param station_name string the station name
+---@param candidate_rails table<integer, boolean>
+local function find_station(station_name, candidate_rails)
+
+    local candidates = game.train_manager.get_train_stops {
+        is_connected_to_rail = true,
+        station_name = station_name
+    }
+
+    -- only one station exists, easy.
+    if #candidates == 1 then return candidates[1] end
+
+    -- that should never happen, but one never knows...
+    if #candidates == 0 then return station_name end
+
+    -- find the station where the rail is connected
+    for _, station in pairs(candidates) do
+        if station.connected_rail and candidate_rails[station.connected_rail.unit_number] then return station end
+    end
+
+    return station_name
+end
+
+---@param train LuaTrain
+---@return (string|LuaEntity)? station
+local function get_next_station(train)
+    if not train.schedule then return nil end
+
+    ---@type ScheduleRecord[]
+    local records = train.schedule.records
+    local index = train.schedule.current
+
+    ---@type table<integer, boolean>
+    local candidate_rails = {}
+
+    if train.path_end_rail then candidate_rails[train.path_end_rail.unit_number] = true end
+
+    if records[index].station and train.state ~= defines.train_state.wait_station then return find_station(records[index].station, candidate_rails) end
+
+    local schedule_size = table_size(records)
+    for i = 1, schedule_size - 1 do
+        local rail = records[index].rail
+        index = math.one_mod(index + 1, schedule_size)
+
+        if records[index].station then
+            if rail then candidate_rails[rail.unit_number] = true end
+            return find_station(records[index].station, candidate_rails)
+        end
+    end
+
+    return nil
 end
 
 ---@param train LuaTrain
 ---@return tt.TrainInfo
 local function create_train_info(train)
     assert(train)
-
     return {
         last_state = train and train.state,
         last_station = train and train.station,
+        next_station = train and get_next_station(train),
         last_tick = game.tick,
         total_distance = 0,
         total_runtime = 0,
@@ -66,13 +124,13 @@ local function create_train_info(train)
 end
 
 ---@param train LuaTrain
----@return string? entity_type
+---@return string entity_type
 function TrainTracker:determineEntityType(train)
-    if not self.has_ships then return 'trains' end
-    local loco = self.getMainLocomotive(train)
-    if not loco then return nil end
-    if const.ship_names[loco.name] then return 'ships' end
-    return 'trains'
+    if self.has_ships then
+        local loco = self.getMainLocomotive(train)
+        if loco and const.ship_names[loco.name] then return const.entity_types.ships end
+    end
+    return const.entity_types.trains
 end
 
 ------------------------------------------------------------------------
@@ -189,6 +247,7 @@ function TrainTracker:trainArrived(train, old_state, event_tick)
         end
 
         train_info.last_station = train.station
+        train_info.next_station = get_next_station(train)
     elseif old_state == defines.train_state.arrive_signal then -- "arrive at signal" -> "wait at signal"
         train_info.total_runtime = train_info.total_runtime + (event_tick - train_info.last_tick)
     else
@@ -214,6 +273,7 @@ function TrainTracker:trainDeparted(train, old_state, event_tick)
             local wait_time = (event_tick - train_info.last_tick)
             train_info.total_waittime = train_info.total_waittime + wait_time
             train_info.stop_waittime = (train_info.stop_waittime or 0) + wait_time
+            train_info.next_station = get_next_station(train)
         end
     elseif old_state == defines.train_state.wait_signal then -- "wait signal" -> "on the path"
         if train_info.last_state == defines.train_state.wait_signal then

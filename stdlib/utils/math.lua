@@ -291,4 +291,12 @@ function Math.sign(x)
     return (x > 0 and 1) or (x == 0 and 0) or -1
 end
 
+-- compute 1-based modulo.
+---@param x number
+---@param y number
+---@return number
+function Math.one_mod(x, y)
+    return ((x - 1) % y) + 1
+end
+
 return Math

@@ -4,13 +4,16 @@
 
 local Player = require('stdlib.event.player')
 local math = require('stdlib.utils.math')
-local string = require('stdlib.utils.string')
+
+-- load extended string library
+require('stdlib.utils.string')
 
 local const = require('lib.constants')
 
 local GuiTools = require('scripts.gui_tools')
 
 local Tree = require('scripts.tree')
+
 
 ------------------------------------------------------------------------
 -- Comparators
@@ -22,9 +25,11 @@ local function compare_train_id(a, b)
     return math.sign(a.train_id - b.train_id)
 end
 
----@param a string
----@param b string
+---@param a string?
+---@param b string?
 local function compare_string(a, b)
+    if not a then return (b and -1 or 0) end
+    if not b then return 1 end
     if a < b then return -1 end
     if a > b then return 1 end
     return 0
@@ -67,14 +72,12 @@ end
 ------------------------------------------------------------------------
 
 ---@param gui framework.gui
----@param entity_type string
 ---@param train_info tt.TrainInfo
 ---@return table<string, string>?
-local function tag_train_id(gui, entity_type, train_info)
+local function tag_train_id(gui, train_info)
     if not train_info.train_name then return nil end
 
     return {
-        entity_type = entity_type,
         id = train_info.train_id,
         handler = {
             [defines.events.on_gui_click] = gui.gui_events.onClickEntity
@@ -83,17 +86,29 @@ local function tag_train_id(gui, entity_type, train_info)
 end
 
 ---@param gui framework.gui
----@param entity_type string
 ---@param train_info tt.TrainInfo
 ---@return table<string, string>?
-local function tag_station_id(gui, entity_type, train_info)
+local function tag_last_station_id(gui, train_info)
     if not (train_info.last_station and train_info.last_station.valid) then return nil end
 
     return {
-        entity_type = entity_type,
         id = train_info.train_id,
         handler = {
-            [defines.events.on_gui_click] = gui.gui_events.onClickStation
+            [defines.events.on_gui_click] = gui.gui_events.onClickLastStation
+        },
+    }
+end
+
+---@param gui framework.gui
+---@param train_info tt.TrainInfo
+---@return table<string, string>?
+local function tag_next_station_id(gui, train_info)
+    if not (train_info.next_station and type(train_info.next_station) ~= 'string') then return nil end
+
+    return {
+        id = train_info.train_id,
+        handler = {
+            [defines.events.on_gui_click] = gui.gui_events.onClickNextStation
         },
     }
 end
@@ -107,7 +122,7 @@ end
 ---@class tt.TabInfo
 ---@field comparator fun(a: tt.TrainInfo, b: tt.TrainInfo): integer
 ---@field formatter tt.Formatter
----@field tags (fun(gui: framework.gui, event_type: string, train_info: tt.TrainInfo) : table<string, string>)?
+---@field tags (fun(gui: framework.gui, train_info: tt.TrainInfo, event_type: string?) : table<string, string>)?
 
 ---@type table<string, tt.TabInfo>
 local tab_info = {
@@ -149,16 +164,6 @@ local tab_info = {
             return format_time(train_info.total_runtime)
         end,
     },
-    [const.sorting.total_waittime] = {
-        comparator = function(a, b)
-            local result = math.sign(a.total_waittime - b.total_waittime)
-            if result ~= 0 then return result end
-            return compare_train_id(a, b)
-        end,
-        formatter = function(train_info)
-            return format_time(train_info.total_waittime)
-        end,
-    },
     [const.sorting.stop_waittime] = {
         comparator = function(a, b)
             local result = math.sign(a.stop_waittime - b.stop_waittime)
@@ -179,19 +184,33 @@ local tab_info = {
             return format_time(train_info.signal_waittime)
         end,
     },
-    [const.sorting.last_station] = {
+    [const.sorting.next_station] = {
         comparator = function(a, b)
-            if not a.last_station then return b.last_station and -1 or 0 end
-            if not b.last_station then return 1 end
-            local result = compare_string(a.last_station.backer_name, b.last_station.backer_name)
+            local left = const.get_station_name(a.next_station)
+            local right = const.get_station_name(b.next_station)
+            local result = compare_string(left, right)
             if result ~= 0 then return result end
 
             return compare_train_id(a, b)
         end,
         formatter = function(train_info)
-            return train_info.last_station and train_info.last_station.backer_name or nil
+            return const.get_station_name(train_info.next_station, '')
         end,
-        tags = tag_station_id,
+        tags = tag_next_station_id,
+    },
+    [const.sorting.last_station] = {
+        comparator = function(a, b)
+            local left = const.get_station_name(a.last_station)
+            local right = const.get_station_name(b.last_station)
+            local result = compare_string(left, right)
+            if result ~= 0 then return result end
+
+            return compare_train_id(a, b)
+        end,
+        formatter = function(train_info)
+            return const.get_station_name(train_info.last_station, '')
+        end,
+        tags = tag_last_station_id,
     },
     [const.sorting.state] = {
         comparator = function(a, b)
@@ -213,29 +232,29 @@ local tab_info = {
 ---@param sort_value string sorted value constant
 ---@return framework.gui.element_definition
 local function render_checkbox(gui, entity_type, sort_value)
+    ---@type tt.PlayerStorage
     local player_data = assert(Player.pdata(gui.player_index))
-    ---@type tt.TabState
     local tab_state = assert(player_data.tab_state[entity_type])
+
     return GuiTools.renderCheckbox(gui, entity_type, gui.gui_events.onSort, tab_state, sort_value)
 end
 
 ---@param gui framework.gui
 ---@param entity_type string
----@param name string
----@param format string
+---@param field string
 ---@param train_info tt.TrainInfo
 ---@param tooltip_override string?
-local function flow_add(gui, entity_type, name, format, train_info, tooltip_override)
-    local element = assert(gui:find_element(entity_type .. '-' .. name))
-    local tags = tab_info[format].tags and tab_info[format].tags(gui, entity_type, train_info) or nil
+local function flow_add(gui, entity_type, field, train_info, tooltip_override)
+    local element = assert(gui:find_element(entity_type .. '-' .. field))
+    local tags = tab_info[field].tags and tab_info[field].tags(gui, train_info) or nil
 
     element.add {
         type = 'label',
-        name = gui:generate_gui_name(('%s-%s-%d'):format(entity_type, name, train_info.train_id)),
-        caption = tab_info[format].formatter(train_info, entity_type) or { const:locale('unknown') },
+        name = gui:generate_gui_name(('%s-%s-%d'):format(entity_type, field, train_info.train_id)),
+        caption = tab_info[field].formatter(train_info, entity_type) or { const:locale('unknown') },
         style = tags and 'tt_clickable_label' or 'label',
         tags = tags,
-        tooltip = tags and { const:locale('open_gui_' .. (tooltip_override or format)) },
+        tooltip = tags and { const:locale('open_gui_' .. (tooltip_override or field)) },
     }
 end
 
@@ -290,7 +309,7 @@ local function create_gui_pane(entity_type)
                                     type = 'table',
                                     style = 'table',
                                     name = entity_table,
-                                    column_count = 8,
+                                    column_count = table_size(const.sorting),
                                     draw_horizontal_line_after_headers = true,
                                     style_mods = {
                                         margin = 4,
@@ -304,10 +323,11 @@ local function create_gui_pane(entity_type)
                                         render_checkbox(gui, entity_type, const.sorting.signal_waittime),
                                         render_checkbox(gui, entity_type, const.sorting.stop_waittime),
                                         render_checkbox(gui, entity_type, const.sorting.last_station),
+                                        render_checkbox(gui, entity_type, const.sorting.next_station),
                                         render_checkbox(gui, entity_type, const.sorting.state),
                                         {
                                             type = 'flow',
-                                            name = entity_type .. '-train_id',
+                                            name = entity_type .. '-' .. const.sorting.train_id,
                                             direction = 'vertical',
                                             style_mods = {
                                                 horizontally_stretchable = true,
@@ -316,7 +336,7 @@ local function create_gui_pane(entity_type)
                                         },
                                         {
                                             type = 'flow',
-                                            name = entity_type .. '-train_name',
+                                            name = entity_type .. '-' .. const.sorting.train_name,
                                             direction = 'vertical',
                                             style_mods = {
                                                 horizontally_stretchable = true,
@@ -325,7 +345,7 @@ local function create_gui_pane(entity_type)
                                         },
                                         {
                                             type = 'flow',
-                                            name = entity_type .. '-total_distance',
+                                            name = entity_type .. '-' .. const.sorting.total_distance,
                                             direction = 'vertical',
                                             style_mods = {
                                                 minimal_width = 80,
@@ -335,7 +355,7 @@ local function create_gui_pane(entity_type)
                                         },
                                         {
                                             type = 'flow',
-                                            name = entity_type .. '-total_runtime',
+                                            name = entity_type .. '-' .. const.sorting.total_runtime,
                                             direction = 'vertical',
                                             style_mods = {
                                                 minimal_width = 80,
@@ -345,7 +365,7 @@ local function create_gui_pane(entity_type)
                                         },
                                         {
                                             type = 'flow',
-                                            name = entity_type .. '-signal_waittime',
+                                            name = entity_type .. '-' .. const.sorting.signal_waittime,
                                             direction = 'vertical',
                                             style_mods = {
                                                 minimal_width = 80,
@@ -355,7 +375,7 @@ local function create_gui_pane(entity_type)
                                         },
                                         {
                                             type = 'flow',
-                                            name = entity_type .. '-stop_waittime',
+                                            name = entity_type .. '-' .. const.sorting.stop_waittime,
                                             direction = 'vertical',
                                             style_mods = {
                                                 minimal_width = 80,
@@ -365,7 +385,7 @@ local function create_gui_pane(entity_type)
                                         },
                                         {
                                             type = 'flow',
-                                            name = entity_type .. '-last_station',
+                                            name = entity_type .. '-' .. const.sorting.last_station,
                                             direction = 'vertical',
                                             style_mods = {
                                                 horizontally_stretchable = true,
@@ -374,7 +394,16 @@ local function create_gui_pane(entity_type)
                                         },
                                         {
                                             type = 'flow',
-                                            name = entity_type .. '-state',
+                                            name = entity_type .. '-' .. const.sorting.next_station,
+                                            direction = 'vertical',
+                                            style_mods = {
+                                                horizontally_stretchable = true,
+                                                horizontal_align = 'left',
+                                            },
+                                        },
+                                        {
+                                            type = 'flow',
+                                            name = entity_type .. '-' .. const.sorting.state,
                                             direction = 'vertical',
                                             style_mods = {
                                                 horizontally_stretchable = true,
@@ -390,9 +419,10 @@ local function create_gui_pane(entity_type)
             }
         end,
         onSort = function(event, gui)
+            ---@type tt.PlayerStorage
             local player_data = assert(Player.pdata(gui.player_index))
-
             local tab_state = player_data.tab_state[entity_type]
+
             tab_state.sort = event.element.tags.value
             tab_state.sort_mode[tab_state.sort] = event.element.state
 
@@ -407,11 +437,20 @@ local function create_gui_pane(entity_type)
             local train = game.train_manager.get_train_by_id(train_id)
             if not (train and train.valid) then return end
             local loco = This.TrainTracker.getMainLocomotive(train)
-            if loco and loco.valid then
+            if not (loco and loco.valid) then return end
+
+            if event.shift then
+                player.opened = nil
+                player.set_controller {
+                    type = defines.controllers.remote,
+                    position = loco.position,
+                    surface = loco.surface,
+                }
+            else
                 player.opened = loco
             end
         end,
-        onClickStation = function(event, gui)
+        onClickLastStation = function(event, gui)
             local player = assert(Player.get(gui.player_index))
 
             local train_id = assert(event.element.tags.id)
@@ -422,6 +461,28 @@ local function create_gui_pane(entity_type)
             if not (station and station.valid) then return end
 
             if event.shift then
+                player.opened = nil
+                player.set_controller {
+                    type = defines.controllers.remote,
+                    position = station.position,
+                    surface = station.surface,
+                }
+            else
+                player.opened = station
+            end
+        end,
+        onClickNextStation = function(event, gui)
+            local player = assert(Player.get(gui.player_index))
+
+            local train_id = assert(event.element.tags.id)
+            local train_info = This.TrainTracker:getEntity(entity_type, train_id)
+            if not train_info then return end
+
+            local station = train_info.next_station
+            if not (station and type(station) ~= 'string' and station.valid) then return end
+
+            if event.shift then
+                player.opened = nil
                 player.set_controller {
                     type = defines.controllers.remote,
                     position = station.position,
@@ -438,6 +499,7 @@ local function create_gui_pane(entity_type)
 
             if not train_table then return false end
 
+            ---@type LuaPlayer, tt.PlayerStorage
             local player, player_data = Player.get(gui.player_index)
             assert(player)
             assert(player_data)
@@ -467,14 +529,15 @@ local function create_gui_pane(entity_type)
                     if not (match_string and match_string:contains(search)) then return false end
                 end
 
-                flow_add(gui, entity_type, 'train_id', const.sorting.train_id, train_info)
-                flow_add(gui, entity_type, 'train_name', const.sorting.train_name, train_info, 'train-id')
-                flow_add(gui, entity_type, 'total_distance', const.sorting.total_distance, train_info)
-                flow_add(gui, entity_type, 'total_runtime', const.sorting.total_runtime, train_info)
-                flow_add(gui, entity_type, 'signal_waittime', const.sorting.signal_waittime, train_info)
-                flow_add(gui, entity_type, 'stop_waittime', const.sorting.stop_waittime, train_info)
-                flow_add(gui, entity_type, 'last_station', const.sorting.last_station, train_info)
-                flow_add(gui, entity_type, 'state', const.sorting.state, train_info)
+                flow_add(gui, entity_type, const.sorting.train_id, train_info, const.sorting.last_station)
+                flow_add(gui, entity_type, const.sorting.train_name, train_info, const.sorting.last_station)
+                flow_add(gui, entity_type, const.sorting.total_distance, train_info)
+                flow_add(gui, entity_type, const.sorting.total_runtime, train_info)
+                flow_add(gui, entity_type, const.sorting.signal_waittime, train_info)
+                flow_add(gui, entity_type, const.sorting.stop_waittime, train_info)
+                flow_add(gui, entity_type, const.sorting.next_station, train_info, const.sorting.last_station)
+                flow_add(gui, entity_type, const.sorting.last_station, train_info)
+                flow_add(gui, entity_type, const.sorting.state, train_info)
 
                 return true
             end, limit)
@@ -482,21 +545,14 @@ local function create_gui_pane(entity_type)
             return true
         end,
         updateGuiPane = function(gui)
+            ---@type tt.PlayerStorage
             local player_data = assert(Player.pdata(gui.player_index))
-
-            ---@type tt.TabState
             local tab_state = player_data.tab_state[entity_type]
 
             local train_table = assert(gui:find_element(entity_table))
             for i = 1, train_table.column_count do
                 GuiTools.updateCheckbox(train_table.children[i], tab_state)
             end
-
-            local limit = assert(gui:find_element('limit'))
-            limit.selected_index = tab_state.limit or const.limit_dropdown.all
-
-            local filter_field = assert(gui:find_element('filter-field'))
-            filter_field.selected_index = tab_state.filter or const.filter_dropdown.id
 
             return true
         end,

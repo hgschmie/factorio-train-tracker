@@ -51,6 +51,17 @@ end
 local function on_configuration_changed()
     This.TrainTracker:init()
     This.TrainTracker:resync()
+
+    for player_index, player in pairs(game.players) do
+        This.Gui.closeGui(player)
+
+    ---@type tt.PlayerStorage?
+        local player_data = Player.pdata(player_index)
+        if player_data then
+            player_data.tab_state = nil
+            player_data.tab = nil
+        end
+    end
 end
 
 ---@params event EventData.on_player_joined
