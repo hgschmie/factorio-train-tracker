@@ -439,7 +439,8 @@ function Gui.guiUpdater(gui)
     local context = gui.context
 
     if context.pacer <= 0 then
-        context.pacer = 55 -- 55 * 11 = 605 ticks ~ 10 sec
+        context.pacer = 11 -- 11 * 11 = 121 ticks ~ 2 sec
+                           -- 55 * 11 = 605 ticks ~ 10 sec
         if not tab.refreshGuiPane(gui) then return false end
     else
         context.pacer = context.pacer - 1

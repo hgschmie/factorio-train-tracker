@@ -12,6 +12,8 @@ local const = require('lib.constants')
 -- event code
 --------------------------------------------------------------------------------
 
+local TICK_RATE = 31
+
 ---@param event EventData.on_train_changed_state
 local function on_train_changed_state(event)
     local train = event and event.train
@@ -25,6 +27,19 @@ local function on_train_changed_state(event)
     elseif train.state == defines.train_state.on_the_path then
         This.TrainTracker:trainDeparted(train, event.old_state, event.tick)
     end
+end
+
+---@param event EventData.on_train_created
+local function on_train_created(event)
+    if not (event.train and event.train.valid) then return end
+    local entity_type = This.TrainTracker:determineEntityType(event.train)
+    This.TrainTracker:getOrCreateEntity(entity_type, event.train)
+end
+
+---@param event EventData.on_object_destroyed
+local function on_object_destroyed(event)
+    if event.type ~= defines.target_type.train then return end
+    This.TrainTracker:destroyEntity(event.useful_id)
 end
 
 --------------------------------------------------------------------------------
@@ -55,7 +70,7 @@ local function on_configuration_changed()
     for player_index, player in pairs(game.players) do
         This.Gui.closeGui(player)
 
-    ---@type tt.PlayerStorage?
+        ---@type tt.PlayerStorage?
         local player_data = Player.pdata(player_index)
         if player_data then
             player_data.tab_state = nil
@@ -79,6 +94,47 @@ local function on_singleplayer_init()
 end
 
 --------------------------------------------------------------------------------
+-- Event ticker
+--------------------------------------------------------------------------------
+
+local function next_entity()
+    storage.ticker.entity_type = next(const.entity_types, storage.ticker.entity_type) or next(const.entity_types)
+    return storage.ticker.entity_type
+end
+
+local function onTick()
+    storage.ticker = storage.ticker or {}
+
+    local entity_type = storage.ticker.entity_type or next_entity()
+    local entities = This.TrainTracker:entities(entity_type)
+    local process_count = math.ceil((table_size(entities) * TICK_RATE) / 60)
+    local index = storage.ticker.last_tick_index
+
+    if process_count > 0 then
+        ---@type tt.TrainInfo
+        local train_info
+        repeat
+            index, train_info = next(entities, index)
+            if train_info then
+                local train = game.train_manager.get_train_by_id(train_info.train_id)
+                if train and train.valid then
+                    train_info.current_station = train.station
+                    train_info.last_state = train.state
+                else
+                    This.TrainTracker:clearEntity(entity_type, train_info.train_id)
+                end
+                process_count = process_count - 1
+            end
+        until process_count == 0 or not index
+    else
+        index = nil
+    end
+
+    if not index then next_entity() end
+    storage.ticker.last_tick_index = index
+end
+
+--------------------------------------------------------------------------------
 -- event registration and management
 --------------------------------------------------------------------------------
 
@@ -89,6 +145,11 @@ local function register_events()
     Event.register(defines.events.on_player_joined_game, on_player_joined)
 
     Event.register(defines.events.on_train_changed_state, on_train_changed_state)
+    Event.register(defines.events.on_train_created, on_train_created)
+    Event.register(defines.events.on_object_destroyed, on_object_destroyed)
+
+    -- Ticker
+    Event.on_nth_tick(TICK_RATE, onTick)
 end
 
 --------------------------------------------------------------------------------

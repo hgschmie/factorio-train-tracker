@@ -108,6 +108,9 @@ end
 ---@return tt.TrainInfo
 local function create_train_info(train)
     assert(train)
+
+    script.register_on_object_destroyed(train)
+
     return {
         last_state = train and train.state,
         last_station = nil,
@@ -205,9 +208,17 @@ function TrainTracker:setEntity(entity_type, train_id, train_info)
 end
 
 ---@param entity_type string
----@param train_id integer
+---@param train_id integer?
 function TrainTracker:clearEntity(entity_type, train_id)
+    if not train_id then return end
     self:entities(entity_type)[train_id] = nil
+end
+
+---@param train_id integer
+function TrainTracker:destroyEntity(train_id)
+    for _, entity_type in pairs(const.entity_types) do
+        self:entities(entity_type)[train_id] = nil
+    end
 end
 
 ------------------------------------------------------------------------
