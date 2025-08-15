@@ -34,6 +34,7 @@ end
 ---@field onSort fun(event: EventData.on_gui_checked_state_changed, gui: framework.gui)
 ---@field onClickEntity fun(event: EventData.on_gui_click, gui: framework.gui)
 ---@field onClickLastStation fun(event: EventData.on_gui_click, gui: framework.gui)
+---@field onClickCurrentStation fun(event: EventData.on_gui_click, gui: framework.gui)
 ---@field onClickNextStation fun(event: EventData.on_gui_click, gui: framework.gui)
 ---@field updateGuiPane fun(gui: framework.gui): boolean
 ---@field refreshGuiPane fun(gui: framework.gui): boolean
@@ -53,6 +54,7 @@ local function get_gui_event_definition()
             onSort = Gui.onSort,
             onClickEntity = Gui.onClickEntity,
             onClickLastStation = Gui.onClickLastStation,
+            onClickCurrentStation = Gui.onClickCurrentStation,
             onClickNextStation = Gui.onClickNextStation,
             onLimitChanged = Gui.onLimitChanged,
             onFilterFieldChanged = Gui.onFilterFieldChanged,
@@ -182,6 +184,7 @@ function Gui.getUi(gui)
                                             [const.filter_dropdown.id] = { const:locale('filter-' .. const.sorting.train_id) },
                                             [const.filter_dropdown.name] = { const:locale('filter-' .. const.sorting.train_name) },
                                             [const.filter_dropdown.last_station] = { const:locale('filter-' .. const.sorting.last_station) },
+                                            [const.filter_dropdown.current_station] = { const:locale('filter-' .. const.sorting.current_station) },
                                             [const.filter_dropdown.next_station] = { const:locale('filter-' .. const.sorting.next_station) },
                                             [const.filter_dropdown.state] = { const:locale('filter-' .. const.sorting.state) },
                                         },
@@ -283,6 +286,17 @@ function Gui.onClickLastStation(event)
 
     local entity_type = assert(player_data.tab)
     return tabs[entity_type].onClickLastStation(event, gui)
+end
+
+---@param event EventData.on_gui_click
+function Gui.onClickCurrentStation(event)
+    local gui = assert(Framework.gui_manager:find_gui(event.player_index))
+
+    ---@type tt.PlayerStorage
+    local player_data = assert(Player.pdata(gui.player_index))
+
+    local entity_type = assert(player_data.tab)
+    return tabs[entity_type].onClickCurrentStation(event, gui)
 end
 
 ---@param event EventData.on_gui_click

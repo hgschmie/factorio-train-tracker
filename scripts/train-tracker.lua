@@ -12,6 +12,7 @@ local math = require('stdlib.utils.math')
 ---@class tt.TrainInfo
 ---@field last_state defines.train_state?
 ---@field last_station LuaEntity?
+---@field current_station LuaEntity?
 ---@field next_station (LuaEntity|string)?
 ---@field last_tick integer
 ---@field total_distance integer
@@ -54,7 +55,6 @@ end
 ---@param station_name string the station name
 ---@param candidate_rails table<integer, boolean>
 local function find_station(station_name, candidate_rails)
-
     local candidates = game.train_manager.get_train_stops {
         is_connected_to_rail = true,
         station_name = station_name
@@ -110,7 +110,8 @@ local function create_train_info(train)
     assert(train)
     return {
         last_state = train and train.state,
-        last_station = train and train.station,
+        last_station = nil,
+        current_station = train and train.station,
         next_station = train and get_next_station(train),
         last_tick = game.tick,
         total_distance = 0,
@@ -224,9 +225,10 @@ function TrainTracker:trainArrived(train, old_state, event_tick)
 
     if old_state == defines.train_state.arrive_station then -- "arrive at station" -> "wait at station"
         train_info.total_runtime = train_info.total_runtime + (event_tick - train_info.last_tick)
+        if train.station and train.station.valid then train_info.current_station = train.station end
 
         if train_info.last_station and train_info.last_station.valid and train_info.last_station.connected_rail
-            and train.station and train.station.valid and train.station.connected_rail then
+            and train_info.current_station and train_info.current_station.connected_rail then
             local path_result = game.train_manager.request_train_path {
                 starts = {
                     {
@@ -238,7 +240,7 @@ function TrainTracker:trainArrived(train, old_state, event_tick)
                         direction = defines.rail_direction.back,
                     },
                 },
-                goals = { train.station },
+                goals = { train_info.current_station },
             }
 
             if path_result.found_path then
@@ -246,7 +248,6 @@ function TrainTracker:trainArrived(train, old_state, event_tick)
             end
         end
 
-        train_info.last_station = train.station
         train_info.next_station = get_next_station(train)
     elseif old_state == defines.train_state.arrive_signal then -- "arrive at signal" -> "wait at signal"
         train_info.total_runtime = train_info.total_runtime + (event_tick - train_info.last_tick)
@@ -273,6 +274,9 @@ function TrainTracker:trainDeparted(train, old_state, event_tick)
             local wait_time = (event_tick - train_info.last_tick)
             train_info.total_waittime = train_info.total_waittime + wait_time
             train_info.stop_waittime = (train_info.stop_waittime or 0) + wait_time
+
+            train_info.last_station = train_info.current_station
+            train_info.current_station = nil
             train_info.next_station = get_next_station(train)
         end
     elseif old_state == defines.train_state.wait_signal then -- "wait signal" -> "on the path"

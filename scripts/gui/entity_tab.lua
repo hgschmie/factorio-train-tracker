@@ -102,6 +102,20 @@ end
 ---@param gui framework.gui
 ---@param train_info tt.TrainInfo
 ---@return table<string, string>?
+local function tag_current_station_id(gui, train_info)
+    if not (train_info.current_station and train_info.current_station.valid) then return nil end
+
+    return {
+        id = train_info.train_id,
+        handler = {
+            [defines.events.on_gui_click] = gui.gui_events.onClickCurrentStation
+        },
+    }
+end
+
+---@param gui framework.gui
+---@param train_info tt.TrainInfo
+---@return table<string, string>?
 local function tag_next_station_id(gui, train_info)
     if not (train_info.next_station and type(train_info.next_station) ~= 'string') then return nil end
 
@@ -184,20 +198,6 @@ local tab_info = {
             return format_time(train_info.signal_waittime)
         end,
     },
-    [const.sorting.next_station] = {
-        comparator = function(a, b)
-            local left = const.get_station_name(a.next_station)
-            local right = const.get_station_name(b.next_station)
-            local result = compare_string(left, right)
-            if result ~= 0 then return result end
-
-            return compare_train_id(a, b)
-        end,
-        formatter = function(train_info)
-            return const.get_station_name(train_info.next_station, '')
-        end,
-        tags = tag_next_station_id,
-    },
     [const.sorting.last_station] = {
         comparator = function(a, b)
             local left = const.get_station_name(a.last_station)
@@ -211,6 +211,34 @@ local tab_info = {
             return const.get_station_name(train_info.last_station, '')
         end,
         tags = tag_last_station_id,
+    },
+    [const.sorting.current_station] = {
+        comparator = function(a, b)
+            local left = const.get_station_name(a.current_station)
+            local right = const.get_station_name(b.current_station)
+            local result = compare_string(left, right)
+            if result ~= 0 then return result end
+
+            return compare_train_id(a, b)
+        end,
+        formatter = function(train_info)
+            return const.get_station_name(train_info.current_station, '')
+        end,
+        tags = tag_current_station_id,
+    },
+    [const.sorting.next_station] = {
+        comparator = function(a, b)
+            local left = const.get_station_name(a.next_station)
+            local right = const.get_station_name(b.next_station)
+            local result = compare_string(left, right)
+            if result ~= 0 then return result end
+
+            return compare_train_id(a, b)
+        end,
+        formatter = function(train_info)
+            return const.get_station_name(train_info.next_station, '')
+        end,
+        tags = tag_next_station_id,
     },
     [const.sorting.state] = {
         comparator = function(a, b)
@@ -323,6 +351,7 @@ local function create_gui_pane(entity_type)
                                         render_checkbox(gui, entity_type, const.sorting.signal_waittime),
                                         render_checkbox(gui, entity_type, const.sorting.stop_waittime),
                                         render_checkbox(gui, entity_type, const.sorting.last_station),
+                                        render_checkbox(gui, entity_type, const.sorting.current_station),
                                         render_checkbox(gui, entity_type, const.sorting.next_station),
                                         render_checkbox(gui, entity_type, const.sorting.state),
                                         {
@@ -386,6 +415,15 @@ local function create_gui_pane(entity_type)
                                         {
                                             type = 'flow',
                                             name = entity_type .. '-' .. const.sorting.last_station,
+                                            direction = 'vertical',
+                                            style_mods = {
+                                                horizontally_stretchable = true,
+                                                horizontal_align = 'left',
+                                            },
+                                        },
+                                        {
+                                            type = 'flow',
+                                            name = entity_type .. '-' .. const.sorting.current_station,
                                             direction = 'vertical',
                                             style_mods = {
                                                 horizontally_stretchable = true,
@@ -471,6 +509,27 @@ local function create_gui_pane(entity_type)
                 player.opened = station
             end
         end,
+        onClickCurrentStation = function(event, gui)
+            local player = assert(Player.get(gui.player_index))
+
+            local train_id = assert(event.element.tags.id)
+            local train_info = This.TrainTracker:getEntity(entity_type, train_id)
+            if not train_info then return end
+
+            local station = train_info.current_station
+            if not (station and station.valid) then return end
+
+            if event.shift then
+                player.opened = nil
+                player.set_controller {
+                    type = defines.controllers.remote,
+                    position = station.position,
+                    surface = station.surface,
+                }
+            else
+                player.opened = station
+            end
+        end,
         onClickNextStation = function(event, gui)
             local player = assert(Player.get(gui.player_index))
 
@@ -529,14 +588,15 @@ local function create_gui_pane(entity_type)
                     if not (match_string and match_string:contains(search)) then return false end
                 end
 
-                flow_add(gui, entity_type, const.sorting.train_id, train_info, const.sorting.last_station)
-                flow_add(gui, entity_type, const.sorting.train_name, train_info, const.sorting.last_station)
+                flow_add(gui, entity_type, const.sorting.train_id, train_info, 'shift')
+                flow_add(gui, entity_type, const.sorting.train_name, train_info, 'shift')
                 flow_add(gui, entity_type, const.sorting.total_distance, train_info)
                 flow_add(gui, entity_type, const.sorting.total_runtime, train_info)
                 flow_add(gui, entity_type, const.sorting.signal_waittime, train_info)
                 flow_add(gui, entity_type, const.sorting.stop_waittime, train_info)
-                flow_add(gui, entity_type, const.sorting.next_station, train_info, const.sorting.last_station)
-                flow_add(gui, entity_type, const.sorting.last_station, train_info)
+                flow_add(gui, entity_type, const.sorting.last_station, train_info, 'shift')
+                flow_add(gui, entity_type, const.sorting.current_station, train_info, 'shift')
+                flow_add(gui, entity_type, const.sorting.next_station, train_info, 'shift')
                 flow_add(gui, entity_type, const.sorting.state, train_info)
 
                 return true

@@ -95,8 +95,9 @@ Constants.filter_dropdown = {
     id = 1,
     name = 2,
     last_station = 3,
-    next_station = 4,
-    state = 5,
+    current_station = 4,
+    next_station = 5,
+    state = 6,
 }
 ---@param station (string|LuaEntity)?
 ---@param default string?
@@ -114,6 +115,7 @@ Constants.filter_dropdown_values = {
     function(train_info) return tostring(train_info.train_id) end,
     function(train_info) return train_info.train_name end,
     function(train_info) return Constants.get_station_name(train_info.last_station, '') end,
+    function(train_info) return Constants.get_station_name(train_info.current_station, '') end,
     function(train_info) return Constants.get_station_name(train_info.next_station, '') end,
     function(train_info, entity_type, player)
         local state = train_info.last_state
@@ -133,19 +135,24 @@ end
 -- sorting constants
 --------------------------------------------------------------------------------
 
+Constants.sorting_keys = {
+    'train_id',
+    'train_name',
+    'total_distance',
+    'total_runtime',
+    'stop_waittime',
+    'signal_waittime',
+    'last_station',
+    'current_station',
+    'next_station',
+    'state',
+}
+
 Constants.sorting = {}
 
-Constants.sorting = {
-    train_id = 'train_id',
-    train_name = 'train_name',
-    total_distance = 'total_distance',
-    total_runtime = 'total_runtime',
-    stop_waittime = 'stop_waittime',
-    signal_waittime = 'signal_waittime',
-    last_station = 'last_station',
-    next_station = 'next_station',
-    state = 'state',
-}
+for _, key in pairs(Constants.sorting_keys) do
+    Constants.sorting[key] = key
+end
 
 --------------------------------------------------------------------------------
 -- settings
