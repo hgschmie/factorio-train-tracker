@@ -8,6 +8,12 @@ local const = require('lib.constants')
 -- load extended math lib
 local math = require('stdlib.utils.math')
 
+---@class tt.FreightItem
+---@field name string
+---@field quality string?
+---@field count integer
+
+---@alias tt.Freight table<string, tt.FreightItem>
 
 ---@class tt.TrainInfo
 ---@field last_state defines.train_state?
@@ -22,6 +28,8 @@ local math = require('stdlib.utils.math')
 ---@field stop_waittime integer
 ---@field train_name string
 ---@field train_id integer
+---@field current_freight tt.Freight?
+---@field total_freight tt.Freight?
 
 ---@class tt.Storage
 ---@field trains table<integer, tt.TrainInfo>
@@ -105,6 +113,27 @@ local function get_next_station(train)
 end
 
 ---@param train LuaTrain
+---@return tt.Freight
+local function get_freight_from_train(train)
+    local freight = {}
+
+    for _, item in pairs(train.get_contents()) do
+        local key = ('%s__%s'):format(item.name, item.quality or 'normal')
+        freight[key] = item
+    end
+
+    local fluids = {}
+    for k, v in pairs(train.get_fluid_contents()) do
+        freight[k] = {
+            name = k,
+            count = v,
+        }
+    end
+
+    return freight
+end
+
+---@param train LuaTrain
 ---@return tt.TrainInfo
 local function create_train_info(train)
     assert(train)
@@ -123,7 +152,8 @@ local function create_train_info(train)
         stop_waittime = 0,
         signal_waittime = 0,
         train_name = get_train_name(train),
-        train_id = train.id
+        train_id = train.id,
+        total_freight = {},
     }
 end
 
@@ -260,6 +290,7 @@ function TrainTracker:trainArrived(train, old_state, event_tick)
         end
 
         train_info.next_station = get_next_station(train)
+        train_info.current_freight = get_freight_from_train(train)
     elseif old_state == defines.train_state.arrive_signal then -- "arrive at signal" -> "wait at signal"
         train_info.total_runtime = train_info.total_runtime + (event_tick - train_info.last_tick)
     else
@@ -289,6 +320,18 @@ function TrainTracker:trainDeparted(train, old_state, event_tick)
             train_info.last_station = train_info.current_station
             train_info.current_station = nil
             train_info.next_station = get_next_station(train)
+
+            local old_freight = train_info.current_freight
+            if table_size(old_freight) > 0 then
+                -- calculate diff between old and new. diff is total freight transported
+                local new_freight = get_freight_from_train(train)
+                for k, v in pairs(old_freight) do
+                    local diff = new_freight[k] and (v.count - new_freight[k].count) or v.count
+                    if diff > 0 then
+                        train_info.total_freight[k] = (train_info.total_freight[k] or 0) + diff
+                    end
+                end
+            end
         end
     elseif old_state == defines.train_state.wait_signal then -- "wait signal" -> "on the path"
         if train_info.last_state == defines.train_state.wait_signal then
