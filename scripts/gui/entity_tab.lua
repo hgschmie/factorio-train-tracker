@@ -10,237 +10,215 @@ require('stdlib.utils.string')
 
 local const = require('lib.constants')
 
-local GuiTools = require('scripts.gui_tools')
-
 local Tree = require('scripts.tree')
 
 ---@class tt.Sorting
 local Sorting = require('scripts.sorting')
 
 ---@param gui framework.gui
----@param train_info tt.TrainInfo
----@return table<string, string>?
-local function tag_train_id(gui, train_info)
-    if not train_info.train_name then return nil end
+---@param entity_type string
+---@param tab_name string
+---@param sort_value string sorted value constant
+---@return framework.gui.element_definition
+local function render_checkbox(gui, entity_type, tab_name, sort_value)
+    ---@type tt.PlayerStorage
+    local player_data = assert(Player.pdata(gui.player_index))
+
+    local tab_state = assert(player_data.tab_state[entity_type])
+    local gui_events = gui.gui_events
+    local style = (tab_state.sort == sort_value) and 'tt_selected_sort_checkbox' or 'tt_sort_checkbox'
+
+    tab_state.sort_mode[sort_value] = tab_state.sort_mode[sort_value] or false
+
+    local tab_prefix = ('%s_%s'):format(entity_type, tab_name)
+    local locale_key = ('%s.%s'):format(entity_type, sort_value)
 
     return {
-        id = train_info.train_id,
-        handler = {
-            [defines.events.on_gui_click] = gui.gui_events.onClickEntity
+        type = 'checkbox',
+        style = style,
+        name = 'check-' .. tab_prefix .. '-' .. sort_value,
+        caption = { const:locale(locale_key) },
+        handler = { [defines.events.on_gui_checked_state_changed] = gui_events[gui.gui_events.onSort] },
+        state = tab_state.sort_mode[sort_value],
+        tooltip = { const:locale('tooltip_' .. locale_key) },
+        elem_tags = {
+            value = sort_value,
+            entity_type = entity_type,
+        },
+        style_mods = {
+            horizontal_align = 'center',
+        },
+    }
+end
+
+---@param entity_type string
+---@param tab_name string
+---@param column_name string
+---@return framework.gui.element_definition
+local function render_heading(entity_type, tab_name, column_name)
+    local tab_prefix = ('%s_%s'):format(entity_type, tab_name)
+    local locale_key = ('%s.%s'):format(entity_type, column_name)
+
+    return {
+        type = 'label',
+        name = 'header-' .. tab_prefix .. '-' .. column_name,
+        caption = { const:locale(locale_key) },
+        tooltip = { const:locale('tooltip_' .. locale_key) },
+        style = 'label',
+        style_mods = {
+            horizontal_align = 'center',
         },
     }
 end
 
 ---@param gui framework.gui
+---@param entity_type string
+---@param tab_name string
+---@param field string
 ---@param train_info tt.TrainInfo
----@return table<string, string>?
-local function tag_last_station_id(gui, train_info)
-    if not (train_info.last_station and train_info.last_station.valid) then return nil end
+---@param tooltip_override string?
+local function flow_add(gui, entity_type, tab_name, field, train_info, tooltip_override)
+    local tab_prefix = ('%s_%s'):format(entity_type, tab_name)
+    local field_name = ('%s-%s'):format(tab_prefix, field)
+    local element = gui:find_element(field_name)
+    if not element then return end
 
-    return {
-        id = train_info.train_id,
-        handler = {
-            [defines.events.on_gui_click] = gui.gui_events.onClickLastStation
-        },
-    }
-end
+    local tab_info = assert(Sorting.tab_info[field])
 
----@param gui framework.gui
----@param train_info tt.TrainInfo
----@return table<string, string>?
-local function tag_current_station_id(gui, train_info)
-    if not (train_info.current_station and train_info.current_station.valid) then return nil end
+    local tags = tab_info.tags and tab_info.tags(gui, train_info) or nil
 
-    return {
-        id = train_info.train_id,
-        handler = {
-            [defines.events.on_gui_click] = gui.gui_events.onClickCurrentStation
-        },
-    }
-end
-
----@param gui framework.gui
----@param train_info tt.TrainInfo
----@return table<string, string>?
-local function tag_next_station_id(gui, train_info)
-    if not (train_info.next_station and type(train_info.next_station) ~= 'string') then return nil end
-
-    return {
-        id = train_info.train_id,
-        handler = {
-            [defines.events.on_gui_click] = gui.gui_events.onClickNextStation
-        },
-    }
+    local name = gui:generate_gui_name(('%s-%d'):format(field_name, train_info.train_id))
+    if tab_info.raw or false then
+        tab_info.formatter(train_info, entity_type, element, name)
+    else
+        element.add {
+            type = 'label',
+            name = name,
+            caption = tab_info.formatter(train_info, entity_type, element, name) or { const:locale('unknown') },
+            style = tags and 'tt_clickable_label' or 'label',
+            tags = tags,
+            tooltip = tags and { const:locale('open_gui_' .. (tooltip_override or field)) },
+        }
+    end
 end
 
 ------------------------------------------------------------------------
--- Sorting information for all columns in a tab
+-- implementation functions
 ------------------------------------------------------------------------
 
----@alias tt.Formatter fun(train_info: tt.TrainInfo, entity_type: string?): (string|LocalisedString)?
-
----@class tt.TabInfo
----@field comparator fun(a: tt.TrainInfo, b: tt.TrainInfo): integer
----@field formatter tt.Formatter
----@field tags (fun(gui: framework.gui, train_info: tt.TrainInfo, event_type: string?) : table<string, string>)?
-
----@type table<string, tt.TabInfo>
-local tab_info = {
-    [const.sorting.train_id] = {
-        comparator = compare_train_id,
-        formatter = function(train_info)
-            return format_string(train_info.train_id)
-        end,
-        tags = tag_train_id,
+---@type table<string, tt.SortColumn[]>
+local tab_columns = {
+    dist = {
+        Sorting.sorting.train_id,
+        Sorting.sorting.train_name,
+        Sorting.sorting.total_distance,
+        Sorting.sorting.total_runtime,
+        Sorting.sorting.signal_waittime,
+        Sorting.sorting.stop_waittime,
     },
-    [const.sorting.train_name] = {
-        comparator = function(a, b)
-            local result = compare_string(a.train_name, b.train_name)
-            if result ~= 0 then return result end
-            return compare_train_id(a, b)
-        end,
-        formatter = function(train_info)
-            return format_string(train_info.train_name)
-        end,
-        tags = tag_train_id,
+    station = {
+        Sorting.sorting.train_id,
+        Sorting.sorting.train_name,
+        Sorting.sorting.last_station,
+        Sorting.sorting.current_station,
+        Sorting.sorting.next_station,
+        Sorting.sorting.state,
     },
-    [const.sorting.total_distance] = {
-        comparator = function(a, b)
-            local result = math.sign(a.total_distance - b.total_distance)
-            if result ~= 0 then return result end
-            return compare_train_id(a, b)
-        end,
-        formatter = function(train_info)
-            return format_distance(train_info.total_distance)
-        end,
-    },
-    [const.sorting.total_runtime] = {
-        comparator = function(a, b)
-            local result = math.sign(a.total_runtime - b.total_runtime)
-            if result ~= 0 then return result end
-            return compare_train_id(a, b)
-        end,
-        formatter = function(train_info)
-            return format_time(train_info.total_runtime)
-        end,
-    },
-    [const.sorting.stop_waittime] = {
-        comparator = function(a, b)
-            local result = math.sign(a.stop_waittime - b.stop_waittime)
-            if result ~= 0 then return result end
-            return compare_train_id(a, b)
-        end,
-        formatter = function(train_info)
-            return format_time(train_info.stop_waittime)
-        end,
-    },
-    [const.sorting.signal_waittime] = {
-        comparator = function(a, b)
-            local result = math.sign(a.signal_waittime - b.signal_waittime)
-            if result ~= 0 then return result end
-            return compare_train_id(a, b)
-        end,
-        formatter = function(train_info)
-            return format_time(train_info.signal_waittime)
-        end,
-    },
-    [const.sorting.last_station] = {
-        comparator = function(a, b)
-            local left = const.get_station_name(a.last_station)
-            local right = const.get_station_name(b.last_station)
-            local result = compare_string(left, right)
-            if result ~= 0 then return result end
-
-            return compare_train_id(a, b)
-        end,
-        formatter = function(train_info)
-            return const.get_station_name(train_info.last_station, '')
-        end,
-        tags = tag_last_station_id,
-    },
-    [const.sorting.current_station] = {
-        comparator = function(a, b)
-            local left = const.get_station_name(a.current_station)
-            local right = const.get_station_name(b.current_station)
-            local result = compare_string(left, right)
-            if result ~= 0 then return result end
-
-            return compare_train_id(a, b)
-        end,
-        formatter = function(train_info)
-            return const.get_station_name(train_info.current_station, '')
-        end,
-        tags = tag_current_station_id,
-    },
-    [const.sorting.next_station] = {
-        comparator = function(a, b)
-            local left = const.get_station_name(a.next_station)
-            local right = const.get_station_name(b.next_station)
-            local result = compare_string(left, right)
-            if result ~= 0 then return result end
-
-            return compare_train_id(a, b)
-        end,
-        formatter = function(train_info)
-            return const.get_station_name(train_info.next_station, '')
-        end,
-        tags = tag_next_station_id,
-    },
-    [const.sorting.state] = {
-        comparator = function(a, b)
-            if not a.last_state then return b.last_state and -1 or 0 end
-            if not b.last_state then return 1 end
-            local result = math.sign(a.last_state - b.last_state)
-            if result ~= 0 then return result end
-
-            return compare_train_id(a, b)
-        end,
-        formatter = function(train_info, entity_type)
-            return train_info.last_state and { const:locale(const.trainStateKey(train_info.last_state, entity_type)) } or nil
-        end,
+    freight = {
+        Sorting.sorting.train_id,
+        Sorting.sorting.train_name,
+        Sorting.sorting.freight,
     },
 }
 
 ---@param gui framework.gui
 ---@param entity_type string
----@param sort_value string sorted value constant
----@return framework.gui.element_definition
-local function render_checkbox(gui, entity_type, sort_value)
-    ---@type tt.PlayerStorage
-    local player_data = assert(Player.pdata(gui.player_index))
-    local tab_state = assert(player_data.tab_state[entity_type])
+---@param tab_name string
+---@return tt.GuiElement
+local function get_gui_pane(gui, entity_type, tab_name)
+    local gui_events = gui.gui_events
+    local tab_prefix = entity_type .. '_' .. tab_name
+    local entity_table = tab_prefix .. '_table'
 
-    return GuiTools.renderCheckbox(gui, entity_type, gui.gui_events.onSort, tab_state, sort_value)
-end
+    local columns = assert(tab_columns[tab_name])
 
----@param gui framework.gui
----@param entity_type string
----@param field string
----@param train_info tt.TrainInfo
----@param tooltip_override string?
-local function flow_add(gui, entity_type, field, train_info, tooltip_override)
-    local element = assert(gui:find_element(entity_type .. '-' .. field))
-    local tags = tab_info[field].tags and tab_info[field].tags(gui, train_info) or nil
+    ---@type framework.gui.element_definition[]
+    local children = {}
 
-    element.add {
-        type = 'label',
-        name = gui:generate_gui_name(('%s-%s-%d'):format(entity_type, field, train_info.train_id)),
-        caption = tab_info[field].formatter(train_info, entity_type) or { const:locale('unknown') },
-        style = tags and 'tt_clickable_label' or 'label',
-        tags = tags,
-        tooltip = tags and { const:locale('open_gui_' .. (tooltip_override or field)) },
+    for index, column_name in pairs(columns) do
+        children[index] = Sorting.tab_info[column_name].comparator
+            and render_checkbox(gui, entity_type, tab_name, column_name)
+            or render_heading(entity_type, tab_name, column_name)
+        children[index + table_size(columns)] = {
+            type = 'flow',
+            name = tab_prefix .. '-' .. column_name,
+            direction = 'vertical',
+            style_mods = {
+                horizontal_align = Sorting.tab_info[column_name].alignment,
+                horizontally_stretchable = true,
+            },
+        }
+    end
+
+    return {
+        tab = {
+            type = 'tab',
+            style = 'tab',
+            caption = { const:locale(tab_prefix) },
+            handler = { [defines.events.on_gui_selected_tab_changed] = gui_events.onTabChanged },
+            elem_tags = {
+                entity_type = entity_type,
+                tab_name = tab_name,
+            }
+        },
+        content = {
+            type = 'frame',
+            style = 'deep_frame_in_tabbed_pane',
+            direction = 'vertical',
+            children = {
+                {
+                    type = 'scroll-pane',
+                    direction = 'vertical',
+                    visible = true,
+                    vertical_scroll_policy = 'auto',
+                    horizontal_scroll_policy = 'never',
+                    style_mods = {
+                        horizontally_stretchable = true,
+                        horizontally_squashable = true,
+                        vertically_stretchable = false,
+                    },
+                    children = {
+                        {
+                            type = 'table',
+                            style = 'table',
+                            name = entity_table,
+                            column_count = table_size(columns),
+                            draw_horizontal_line_after_headers = true,
+                            style_mods = {
+                                margin = 4,
+                                cell_padding = 2,
+                            },
+                            children = children,
+                        },
+                    }, -- children
+                },     -- scroll-pane
+            },         -- children
+        },             -- content
     }
 end
+
+
+------------------------------------------------------------------------
+-- gui pane creation
+------------------------------------------------------------------------
 
 ---@param entity_type string
 ---@return tt.GuiPane
 local function create_gui_pane(entity_type)
-    local entity_table = entity_type .. '_table'
-
     return {
         init = function()
             return {
-                sort = const.sorting.train_id,
+                sort = Sorting.sorting.train_id,
                 sort_mode = {},
                 limit = const.limit_dropdown.all,
                 filter = const.filter_dropdown.id,
@@ -248,160 +226,13 @@ local function create_gui_pane(entity_type)
             }
         end,
         getGui = function(gui)
-            local gui_events = gui.gui_events
-
             return {
-                tab = {
-                    type = 'tab',
-                    style = 'tab',
-                    caption = { const:locale(entity_type) },
-                    handler = { [defines.events.on_gui_selected_tab_changed] = gui_events.onTabChanged },
-                    elem_tags = {
-                        tab = entity_type,
-                    }
-                },
-                content = {
-                    type = 'frame',
-                    style = 'deep_frame_in_tabbed_pane',
-                    style_mods = {
-                        horizontally_stretchable = true,
-                    },
-                    direction = 'vertical',
-                    children = {
-                        {
-                            type = 'scroll-pane',
-                            direction = 'vertical',
-                            visible = true,
-                            vertical_scroll_policy = 'auto',
-                            horizontal_scroll_policy = 'never',
-                            style_mods = {
-                                horizontally_stretchable = true,
-                                vertically_stretchable = false,
-                            },
-                            children = {
-                                {
-                                    type = 'table',
-                                    style = 'table',
-                                    name = entity_table,
-                                    column_count = table_size(const.sorting),
-                                    draw_horizontal_line_after_headers = true,
-                                    style_mods = {
-                                        margin = 4,
-                                        cell_padding = 2,
-                                    },
-                                    children = {
-                                        render_checkbox(gui, entity_type, const.sorting.train_id),
-                                        render_checkbox(gui, entity_type, const.sorting.train_name),
-                                        render_checkbox(gui, entity_type, const.sorting.total_distance),
-                                        render_checkbox(gui, entity_type, const.sorting.total_runtime),
-                                        render_checkbox(gui, entity_type, const.sorting.signal_waittime),
-                                        render_checkbox(gui, entity_type, const.sorting.stop_waittime),
-                                        render_checkbox(gui, entity_type, const.sorting.last_station),
-                                        render_checkbox(gui, entity_type, const.sorting.current_station),
-                                        render_checkbox(gui, entity_type, const.sorting.next_station),
-                                        render_checkbox(gui, entity_type, const.sorting.state),
-                                        {
-                                            type = 'flow',
-                                            name = entity_type .. '-' .. const.sorting.train_id,
-                                            direction = 'vertical',
-                                            style_mods = {
-                                                horizontally_stretchable = true,
-                                                horizontal_align = 'center',
-                                            },
-                                        },
-                                        {
-                                            type = 'flow',
-                                            name = entity_type .. '-' .. const.sorting.train_name,
-                                            direction = 'vertical',
-                                            style_mods = {
-                                                horizontally_stretchable = true,
-                                                horizontal_align = 'left',
-                                            },
-                                        },
-                                        {
-                                            type = 'flow',
-                                            name = entity_type .. '-' .. const.sorting.total_distance,
-                                            direction = 'vertical',
-                                            style_mods = {
-                                                minimal_width = 80,
-                                                horizontally_stretchable = true,
-                                                horizontal_align = 'right',
-                                            },
-                                        },
-                                        {
-                                            type = 'flow',
-                                            name = entity_type .. '-' .. const.sorting.total_runtime,
-                                            direction = 'vertical',
-                                            style_mods = {
-                                                minimal_width = 80,
-                                                horizontally_stretchable = true,
-                                                horizontal_align = 'right',
-                                            },
-                                        },
-                                        {
-                                            type = 'flow',
-                                            name = entity_type .. '-' .. const.sorting.signal_waittime,
-                                            direction = 'vertical',
-                                            style_mods = {
-                                                minimal_width = 80,
-                                                horizontally_stretchable = true,
-                                                horizontal_align = 'right',
-                                            },
-                                        },
-                                        {
-                                            type = 'flow',
-                                            name = entity_type .. '-' .. const.sorting.stop_waittime,
-                                            direction = 'vertical',
-                                            style_mods = {
-                                                minimal_width = 80,
-                                                horizontally_stretchable = true,
-                                                horizontal_align = 'right',
-                                            },
-                                        },
-                                        {
-                                            type = 'flow',
-                                            name = entity_type .. '-' .. const.sorting.last_station,
-                                            direction = 'vertical',
-                                            style_mods = {
-                                                horizontally_stretchable = true,
-                                                horizontal_align = 'left',
-                                            },
-                                        },
-                                        {
-                                            type = 'flow',
-                                            name = entity_type .. '-' .. const.sorting.current_station,
-                                            direction = 'vertical',
-                                            style_mods = {
-                                                horizontally_stretchable = true,
-                                                horizontal_align = 'left',
-                                            },
-                                        },
-                                        {
-                                            type = 'flow',
-                                            name = entity_type .. '-' .. const.sorting.next_station,
-                                            direction = 'vertical',
-                                            style_mods = {
-                                                horizontally_stretchable = true,
-                                                horizontal_align = 'left',
-                                            },
-                                        },
-                                        {
-                                            type = 'flow',
-                                            name = entity_type .. '-' .. const.sorting.state,
-                                            direction = 'vertical',
-                                            style_mods = {
-                                                horizontally_stretchable = true,
-                                                horizontal_align = 'left',
-                                            },
-                                        },
-                                    },
-                                },
-                            }, -- children
-                        },     -- scroll-pane
-                    },         -- children
-                },             -- content
+                get_gui_pane(gui, entity_type, 'dist'),
+                get_gui_pane(gui, entity_type, 'station'),
+                get_gui_pane(gui, entity_type, 'freight'),
             }
         end,
+
         onSort = function(event, gui)
             ---@type tt.PlayerStorage
             local player_data = assert(Player.pdata(gui.player_index))
@@ -497,7 +328,9 @@ local function create_gui_pane(entity_type)
                 player.opened = station
             end
         end,
-        refreshGuiPane = function(gui)
+        refreshGuiPane = function(gui, tab_name)
+            local entity_table = (('%s_%s'):format(entity_type, tab_name)) .. '_table'
+
             local train_table = assert(gui:find_element(entity_table))
             -- first set of columns are the headers, second set are the flows
             assert(#train_table.children == train_table.column_count * 2)
@@ -513,7 +346,8 @@ local function create_gui_pane(entity_type)
 
             local tab_state = player_data.tab_state[entity_type]
 
-            local tree = Tree.create(tab_info[tab_state.sort].comparator, tab_state.sort_mode[tab_state.sort])
+            local comparator = assert(Sorting.tab_info[tab_state.sort].comparator)
+            local tree = Tree.create(comparator, tab_state.sort_mode[tab_state.sort])
 
             for _, train_info in pairs(trains) do
                 tree:add(train_info)
@@ -534,30 +368,31 @@ local function create_gui_pane(entity_type)
                     if not (match_string and match_string:contains(search)) then return false end
                 end
 
-                flow_add(gui, entity_type, const.sorting.train_id, train_info, 'shift')
-                flow_add(gui, entity_type, const.sorting.train_name, train_info, 'shift')
-                flow_add(gui, entity_type, const.sorting.total_distance, train_info)
-                flow_add(gui, entity_type, const.sorting.total_runtime, train_info)
-                flow_add(gui, entity_type, const.sorting.signal_waittime, train_info)
-                flow_add(gui, entity_type, const.sorting.stop_waittime, train_info)
-                flow_add(gui, entity_type, const.sorting.last_station, train_info, 'shift')
-                flow_add(gui, entity_type, const.sorting.current_station, train_info, 'shift')
-                flow_add(gui, entity_type, const.sorting.next_station, train_info, 'shift')
-                flow_add(gui, entity_type, const.sorting.state, train_info)
+                local columns = assert(tab_columns[tab_name])
+
+                for _, column_name in pairs(columns) do
+                    flow_add(gui, entity_type, tab_name, column_name, train_info, Sorting.tab_info[column_name].tooltip)
+                end
 
                 return true
             end, limit)
 
             return true
         end,
-        updateGuiPane = function(gui)
+        updateGuiPane = function(gui, tab_name)
+            local entity_table = (('%s_%s'):format(entity_type, tab_name)) .. '_table'
+
             ---@type tt.PlayerStorage
             local player_data = assert(Player.pdata(gui.player_index))
             local tab_state = player_data.tab_state[entity_type]
 
             local train_table = assert(gui:find_element(entity_table))
             for i = 1, train_table.column_count do
-                GuiTools.updateCheckbox(train_table.children[i], tab_state)
+                local checkbox = train_table.children[i]
+                if checkbox.tags.value then
+                    checkbox.style = (tab_state.sort == checkbox.tags.value) and 'tt_selected_sort_checkbox' or 'tt_sort_checkbox'
+                    checkbox.state = tab_state.sort_mode[checkbox.tags.value] or false
+                end
             end
 
             return true

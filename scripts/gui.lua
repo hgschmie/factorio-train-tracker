@@ -8,36 +8,45 @@ local Player = require('stdlib.event.player')
 
 local const = require('lib.constants')
 
-local EntityTab = require('gui.entity_tab')
+local EntityTab = require('scripts.gui.entity_tab')
+local Sorting = require('scripts.sorting')
 
----@type table<string, tt.GuiPane>
-local tabs = {
-    [const.entity_types.trains] = EntityTab.create_gui_pane(const.entity_types.trains),
-}
+---@class tt.TabState
+---@field tab_index integer?
+---@field sort string
+---@field sort_mode table<string, boolean>
+---@field limit tt.limit_dropdown
+---@field filter tt.filter_dropdown
+---@field search string
 
+---@class tt.PlayerStorage
+---@field tab_state table<string, tt.TabState>
+---@field tab string
+---@field toggle boolean?
 
----@class tt.Gui
----@field NAME string
----@field has_ships boolean
-local Gui = {
-    NAME = 'train-tracker-gui',
-    has_ships = script.active_mods['cargo-ships'] and true or false,
-}
-
-if Gui.has_ships then
-    tabs[const.entity_types.ships] = EntityTab.create_gui_pane(const.entity_types.ships)
-end
+---@alias tt.GuiElement framework.gui.element_definition[]
 
 ---@class tt.GuiPane
 ---@field init fun(): tt.TabState
----@field getGui fun(gui: framework.gui) : framework.gui.element_definition[]
+---@field getGui fun(gui: framework.gui) : tt.GuiElement[]
 ---@field onSort fun(event: EventData.on_gui_checked_state_changed, gui: framework.gui)
 ---@field onClickEntity fun(event: EventData.on_gui_click, gui: framework.gui)
 ---@field onClickLastStation fun(event: EventData.on_gui_click, gui: framework.gui)
 ---@field onClickCurrentStation fun(event: EventData.on_gui_click, gui: framework.gui)
 ---@field onClickNextStation fun(event: EventData.on_gui_click, gui: framework.gui)
----@field updateGuiPane fun(gui: framework.gui): boolean
----@field refreshGuiPane fun(gui: framework.gui): boolean
+---@field updateGuiPane fun(gui: framework.gui, tab_name: string): boolean
+---@field refreshGuiPane fun(gui: framework.gui, tab_name: string): boolean
+
+---@class tt.Gui
+---@field NAME string
+---@field gui_panes table<string, tt.GuiPane>
+local Gui = {
+    NAME = 'train-tracker-gui',
+    gui_panes = {
+        [const.entity_types.trains] = EntityTab.create_gui_pane(const.entity_types.trains),
+        [const.entity_types.ships] = const.has_ships and EntityTab.create_gui_pane(const.entity_types.ships) or nil
+    },
+}
 
 ----------------------------------------------------------------------------------------------------
 -- UI definition
@@ -78,14 +87,11 @@ function Gui.getUi(gui)
 
     -- only enable children that are actually present
     local children = {}
-    local index = 1
-    for _, entity_type in pairs { const.entity_types.trains, const.entity_types.ships } do
-        local tab_data = assert(player_data.tab_state[entity_type])
 
-        if tabs[entity_type] then
-            table.insert(children, tabs[entity_type].getGui(gui))
-            tab_data.tab_index = index
-            index = index + 1
+    for _, gui_pane in pairs(Gui.gui_panes) do
+        local gui_children = gui_pane.getGui(gui)
+        for _, gui_child in pairs(gui_children) do
+            table.insert(children, gui_child)
         end
     end
 
@@ -128,9 +134,7 @@ function Gui.getUi(gui)
                 type = 'frame',
                 style = 'entity_frame',
                 style_mods = {
-                    horizontally_stretchable = true,
-                    vertically_stretchable = false,
-                    minimal_width = 400,
+                    natural_width = 400,
                     maximal_height = max_height,
                 },
                 children = {
@@ -166,7 +170,10 @@ function Gui.getUi(gui)
                                     },
                                     {
                                         type = 'empty-widget',
-                                        style_mods = { horizontally_stretchable = true },
+                                        style_mods = {
+                                            horizontally_stretchable = true,
+                                            horizontally_squashable = true,
+                                        },
                                     },
                                     {
                                         type = 'label',
@@ -181,12 +188,12 @@ function Gui.getUi(gui)
                                         name = 'filter-field',
                                         handler = { [defines.events.on_gui_selection_state_changed] = gui_events.onFilterFieldChanged },
                                         items = {
-                                            [const.filter_dropdown.id] = { const:locale('filter-' .. const.sorting.train_id) },
-                                            [const.filter_dropdown.name] = { const:locale('filter-' .. const.sorting.train_name) },
-                                            [const.filter_dropdown.last_station] = { const:locale('filter-' .. const.sorting.last_station) },
-                                            [const.filter_dropdown.current_station] = { const:locale('filter-' .. const.sorting.current_station) },
-                                            [const.filter_dropdown.next_station] = { const:locale('filter-' .. const.sorting.next_station) },
-                                            [const.filter_dropdown.state] = { const:locale('filter-' .. const.sorting.state) },
+                                            [const.filter_dropdown.id] = { const:locale('filter-' .. Sorting.sorting.train_id) },
+                                            [const.filter_dropdown.name] = { const:locale('filter-' .. Sorting.sorting.train_name) },
+                                            [const.filter_dropdown.last_station] = { const:locale('filter-' .. Sorting.sorting.last_station) },
+                                            [const.filter_dropdown.current_station] = { const:locale('filter-' .. Sorting.sorting.current_station) },
+                                            [const.filter_dropdown.next_station] = { const:locale('filter-' .. Sorting.sorting.next_station) },
+                                            [const.filter_dropdown.state] = { const:locale('filter-' .. Sorting.sorting.state) },
                                         },
                                     },
                                     {
@@ -207,9 +214,6 @@ function Gui.getUi(gui)
                                         style = 'tabbed_pane_with_extra_padding',
                                         name = 'main_tab',
                                         handler = { [defines.events.on_gui_selected_tab_changed] = gui_events.onTabChanged },
-                                        style_mods = {
-                                            horizontally_stretchable = true,
-                                        },
                                         children = children,
                                     }, -- tabbed pane
                                 },     -- children
@@ -238,14 +242,17 @@ end
 function Gui.onTabChanged(event)
     local gui = assert(Framework.gui_manager:find_gui(event.player_index))
 
-    local tab = assert(event.element.tabs[event.element.selected_tab_index])
-    local entity_type = assert(tab.tab.tags.tab)
+    local tab_index = event.element.selected_tab_index
+    local tab = assert(event.element.tabs[tab_index])
+    local entity_type = assert(tab.tab.tags.entity_type)
 
     ---@type tt.PlayerStorage
     local player_data = assert(Player.pdata(gui.player_index))
+    -- player_data.tab always holds the current entity type
     player_data.tab = entity_type
 
     local tab_state = assert(player_data.tab_state[entity_type])
+    tab_state.tab_index = tab_index
 
     local filter_text = assert(gui:find_element('filter-text'))
     filter_text.text = tab_state.search or ''
@@ -263,7 +270,7 @@ function Gui.onSort(event)
     local player_data = assert(Player.pdata(gui.player_index))
 
     local entity_type = assert(player_data.tab)
-    return tabs[entity_type].onSort(event, gui)
+    return Gui.gui_panes[entity_type].onSort(event, gui)
 end
 
 ---@param event EventData.on_gui_click
@@ -274,7 +281,7 @@ function Gui.onClickEntity(event)
     local player_data = assert(Player.pdata(gui.player_index))
 
     local entity_type = assert(player_data.tab)
-    return tabs[entity_type].onClickEntity(event, gui)
+    return Gui.gui_panes[entity_type].onClickEntity(event, gui)
 end
 
 ---@param event EventData.on_gui_click
@@ -285,7 +292,7 @@ function Gui.onClickLastStation(event)
     local player_data = assert(Player.pdata(gui.player_index))
 
     local entity_type = assert(player_data.tab)
-    return tabs[entity_type].onClickLastStation(event, gui)
+    return Gui.gui_panes[entity_type].onClickLastStation(event, gui)
 end
 
 ---@param event EventData.on_gui_click
@@ -296,7 +303,7 @@ function Gui.onClickCurrentStation(event)
     local player_data = assert(Player.pdata(gui.player_index))
 
     local entity_type = assert(player_data.tab)
-    return tabs[entity_type].onClickCurrentStation(event, gui)
+    return Gui.gui_panes[entity_type].onClickCurrentStation(event, gui)
 end
 
 ---@param event EventData.on_gui_click
@@ -307,7 +314,7 @@ function Gui.onClickNextStation(event)
     local player_data = assert(Player.pdata(gui.player_index))
 
     local entity_type = assert(player_data.tab)
-    return tabs[entity_type].onClickNextStation(event, gui)
+    return Gui.gui_panes[entity_type].onClickNextStation(event, gui)
 end
 
 ---@param event EventData.on_gui_selection_state_changed
@@ -370,14 +377,15 @@ function Gui.openGui(player)
 
     player_data.tab_state = player_data.tab_state or {}
 
-    for _, entity_type in pairs { const.entity_types.trains, const.entity_types.ships } do
-        if tabs[entity_type] then
-            player_data.tab_state[entity_type] = player_data.tab_state[entity_type] or tabs[entity_type].init()
+    for _, entity_type in pairs(const.entity_types) do
+        if Gui.gui_panes[entity_type] then
+            player_data.tab_state[entity_type] = player_data.tab_state[entity_type] or Gui.gui_panes[entity_type].init()
         else
             player_data.tab_state[entity_type] = nil
         end
     end
 
+    -- player_data.tab always holds the current entity_type
     player_data.tab = player_data.tab or const.entity_types.trains
 
     ---@class tt.GuiContext
@@ -412,10 +420,17 @@ end
 ---@param gui framework.gui
 ---@return boolean
 function Gui.guiUpdater(gui)
-    ---@type tt.PlayerStorage
-    local player_data = assert(Player.pdata(gui.player_index))
-    local tab = assert(tabs[player_data.tab])
+    ---@type tt.PlayerStorage?
+    local player_data = Player.pdata(gui.player_index)
+    if not player_data then return false end
+    ---@type tt.GuiPane?
+    local gui_pane = Gui.gui_panes[player_data.tab]
+    if not gui_pane then return false end
+
+    ---@type tt.TabState
     local tab_state = assert(player_data.tab_state[player_data.tab])
+
+    -- update shared fields
 
     local limit = assert(gui:find_element('limit'))
     limit.selected_index = tab_state.limit or const.limit_dropdown.all
@@ -428,20 +443,27 @@ function Gui.guiUpdater(gui)
         filter_text.text = tab_state.search
     end
 
+    -- end update shared fields
+
+    tab_state.tab_index = tab_state.tab_index or 1
+
+    ---@type LuaGuiElement
     local main_tab = assert(gui:find_element('main_tab'))
     if not main_tab.selected_tab_index then
-        main_tab.selected_tab_index = tab_state.tab_index or 1
+        main_tab.selected_tab_index = tab_state.tab_index
     end
 
-    if not tab.updateGuiPane(gui) then return false end
+    local tab_name = assert(main_tab.tabs[tab_state.tab_index].tab.tags.tab_name)
+
+    if not gui_pane.updateGuiPane(gui, tab_name) then return false end
 
     ---@type tt.GuiContext
     local context = gui.context
 
     if context.pacer <= 0 then
         context.pacer = 11 -- 11 * 11 = 121 ticks ~ 2 sec
-                           -- 55 * 11 = 605 ticks ~ 10 sec
-        if not tab.refreshGuiPane(gui) then return false end
+        -- 55 * 11 = 605 ticks ~ 10 sec
+        if not gui_pane.refreshGuiPane(gui, tab_name) then return false end
     else
         context.pacer = context.pacer - 1
     end
