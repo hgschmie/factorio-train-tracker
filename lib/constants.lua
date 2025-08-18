@@ -143,6 +143,8 @@ end
 -- settings
 --------------------------------------------------------------------------------
 
+Constants.has_ships = (script and script.active_mods['cargo-ships']) and true or false
+
 Constants.settings_keys = {}
 
 Constants.settings_names = {}

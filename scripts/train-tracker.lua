@@ -36,9 +36,7 @@ local math = require('stdlib.utils.math')
 ---@field ships table<integer, tt.TrainInfo>
 
 ---@class tt.TrainTracker
----@field has_ships boolean
 local TrainTracker = {
-    has_ships = script.active_mods['cargo-ships'] and true or false,
 }
 
 ------------------------------------------------------------------------
@@ -160,7 +158,7 @@ end
 ---@param train LuaTrain
 ---@return string entity_type
 function TrainTracker:determineEntityType(train)
-    if self.has_ships then
+    if const.has_ships then
         local loco = self.getMainLocomotive(train)
         if loco and const.ship_names[loco.name] then return const.entity_types.ships end
     end
