@@ -131,27 +131,12 @@ function Constants.trainStateKey(id, entity_type)
     return ('%s.train-state-%d'):format(entity_type, id)
 end
 
---------------------------------------------------------------------------------
--- sorting constants
---------------------------------------------------------------------------------
-
-Constants.sorting_keys = {
-    'train_id',
-    'train_name',
-    'total_distance',
-    'total_runtime',
-    'stop_waittime',
-    'signal_waittime',
-    'last_station',
-    'current_station',
-    'next_station',
-    'state',
-}
-
-Constants.sorting = {}
-
-for _, key in pairs(Constants.sorting_keys) do
-    Constants.sorting[key] = key
+---@param freight_item tt.FreightItem
+---@return string
+function Constants.freightItemToSprite(freight_item)
+    assert(freight_item)
+    local signal_type = freight_item.quality and 'item' or 'fluid'
+    return ('%s/%s'):format(signal_type, freight_item.name)
 end
 
 --------------------------------------------------------------------------------

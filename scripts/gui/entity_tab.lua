@@ -1,9 +1,9 @@
 ------------------------------------------------------------------------
 -- Code for entity lists
 ------------------------------------------------------------------------
+assert(script)
 
 local Player = require('stdlib.event.player')
-local math = require('stdlib.utils.math')
 
 -- load extended string library
 require('stdlib.utils.string')
@@ -14,62 +14,8 @@ local GuiTools = require('scripts.gui_tools')
 
 local Tree = require('scripts.tree')
 
-
-------------------------------------------------------------------------
--- Comparators
-------------------------------------------------------------------------
-
----@param a tt.TrainInfo
----@param b tt.TrainInfo
-local function compare_train_id(a, b)
-    return math.sign(a.train_id - b.train_id)
-end
-
----@param a string?
----@param b string?
-local function compare_string(a, b)
-    if not a then return (b and -1 or 0) end
-    if not b then return 1 end
-    if a < b then return -1 end
-    if a > b then return 1 end
-    return 0
-end
-
-------------------------------------------------------------------------
--- Formatters
-------------------------------------------------------------------------
-
----@param value (integer|string)?
----@return string
-local function format_string(value)
-    return value and tostring(value) or nil
-end
-
----@param value number?
----@return string
-local function format_distance(value)
-    if value == 0 then return '0m' end
-    if value < 10000 then return ('%.2fm'):format(value) end
-    return ('%.2fkm'):format(value / 1000)
-end
-
----@param tick_value number?
----@return string
-local function format_time(tick_value)
-    if tick_value == 0 then return '0s' end
-    local seconds = tick_value / 60
-    if seconds < 60 then return ('%.2fs'):format(seconds) end
-    local minutes = math.floor(seconds / 60)
-    seconds = seconds - minutes * 60
-    if minutes < 60 then return ('%02d:%05.2fs'):format(minutes, seconds) end
-    local hours = math.floor(minutes / 60)
-    minutes = minutes - hours * 60
-    return ('%02d:%02d:%05.2fs'):format(hours, minutes, seconds)
-end
-
-------------------------------------------------------------------------
--- tag functions
-------------------------------------------------------------------------
+---@class tt.Sorting
+local Sorting = require('scripts.sorting')
 
 ---@param gui framework.gui
 ---@param train_info tt.TrainInfo

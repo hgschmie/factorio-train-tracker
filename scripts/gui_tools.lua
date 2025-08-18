@@ -7,19 +7,6 @@ local const = require('lib.constants')
 ---@class tt.GuiTools
 local GuiTools = {}
 
----@class tt.TabState
----@field tab_index integer?
----@field sort string
----@field sort_mode table<string, boolean>
----@field limit tt.limit_dropdown
----@field filter tt.filter_dropdown
----@field search string
-
----@class tt.PlayerStorage
----@field tab_state table<string, tt.TabState>
----@field tab string
----@field toggle boolean?
-
 ---@param gui framework.gui
 ---@param prefix string Name prefix to separate gui element names
 ---@param event_name string The event from the gui events list to use for this checkbox
