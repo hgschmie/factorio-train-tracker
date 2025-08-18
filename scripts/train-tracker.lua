@@ -9,6 +9,7 @@ local const = require('lib.constants')
 local math = require('stdlib.utils.math')
 
 ---@class tt.FreightItem
+---@field type 'item'|'fluid'
 ---@field name string
 ---@field quality string?
 ---@field count integer
@@ -116,13 +117,19 @@ local function get_freight_from_train(train)
     local freight = {}
 
     for _, item in pairs(train.get_contents()) do
-        local key = ('%s__%s'):format(item.name, item.quality or 'normal')
-        freight[key] = item
+        local quality = item.quality or 'normal'
+        local key = ('%s__%s'):format(item.name, quality)
+        freight[key] = {
+            type = 'item',
+            name = item.name,
+            quality = quality,
+            count = item.count,
+        }
     end
 
-    local fluids = {}
     for k, v in pairs(train.get_fluid_contents()) do
         freight[k] = {
+            type = 'fluid',
             name = k,
             count = v,
         }
@@ -320,13 +327,18 @@ function TrainTracker:trainDeparted(train, old_state, event_tick)
             train_info.next_station = get_next_station(train)
 
             local old_freight = train_info.current_freight
-            if table_size(old_freight) > 0 then
+            if old_freight and table_size(old_freight) > 0 then
                 -- calculate diff between old and new. diff is total freight transported
                 local new_freight = get_freight_from_train(train)
                 for k, v in pairs(old_freight) do
                     local diff = new_freight[k] and (v.count - new_freight[k].count) or v.count
                     if diff > 0 then
-                        train_info.total_freight[k] = (train_info.total_freight[k] or 0) + diff
+                        if train_info.total_freight[k] then
+                            train_info.total_freight[k].count = train_info.total_freight[k].count + diff
+                        else
+                            train_info.total_freight[k] = v
+                            train_info.total_freight[k].count = diff
+                        end
                     end
                 end
             end
