@@ -28,7 +28,7 @@ require('stdlib.utils.string')
 ---@field style_mods table<string, any>? Post-creation modifications to make to the element's style.
 ---@field elem_mods table<string, any>? Post-creation modifications to make to the element itself.
 ---@field drag_target string? Set the element's drag target to the element whose name matches this string. The drag target must be present in the UI component tree before assigning it.
----@field handler table<defines.events, string> Handlers to assign to this element.
+---@field handler table<defines.events, string>? Handlers to assign to this element.
 ---@field children framework.gui.element_definition[]? Children to add to this element.
 ---@field tab framework.gui.element_definition? To add a tab, specify `tab` and `content` and leave all other fields unset.
 ---@field content framework.gui.element_definition? To add a tab, specify `tab` and `content` and leave all other fields unset.
