@@ -11,7 +11,7 @@
 ---@field comparator fun(a: any, b: any): integer
 ---@field root TreeNode
 ---@field add (fun(self: Tree, value: any))?
----@field traverse (fun(self: Tree, sink: (fun(value: any): boolean), limit: number))?
+---@field traverse (fun(self: Tree, sink: (fun(value: any): boolean), limit: number?))?
 
 
 local Tree_MT = {}

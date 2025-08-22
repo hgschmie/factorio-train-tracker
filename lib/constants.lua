@@ -139,6 +139,30 @@ function Constants.freightItemToSprite(freight_item)
     return ('%s/%s'):format(signal_type, freight_item.name)
 end
 
+---@param item tt.FreightItem
+function Constants.getFreightSortKey(item)
+    ---@type LuaItemPrototype|LuaFluidPrototype
+    local item_prototype = assert(prototypes[item.type][item.name])
+    local key = ('%s_%s_%s'):format(item_prototype.group.order, item_prototype.subgroup.order, item_prototype.order)
+    if not item.quality then return key end
+    local quality_key = assert(prototypes.quality[item.quality]).order
+    return ('%s__%s'):format(key, quality_key)
+end
+
+---@param train LuaTrain
+---@return LuaEntity? locomotive
+function Constants.getMainLocomotive(train)
+    if not train.valid then return nil end
+    return #train.locomotives.front_movers > 0 and train.locomotives.front_movers[1] or train.locomotives.back_movers[1]
+end
+
+---@param train LuaTrain
+---@return string? name
+function Constants.getTrainName(train)
+    local loco = Constants.getMainLocomotive(train)
+    return (loco and loco.valid) and loco.backer_name or nil
+end
+
 --------------------------------------------------------------------------------
 -- settings
 --------------------------------------------------------------------------------

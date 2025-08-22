@@ -33,10 +33,13 @@ local function fix_freight(freight)
                 result.type = 'fluid'
                 result.name = key
             end
-            new_freight[key] = result
+            local sort_key = const.getFreightSortKey(result)
+
+            new_freight[sort_key] = result
         else
-            new_freight[key] = item
-            new_freight[key].type = new_freight[key].quality and 'item' or 'fluid'
+            item[key].type = item[key].quality and 'item' or 'fluid'
+            local sort_key = const.getFreightSortKey(item[key])
+            new_freight[sort_key] = item[key]
         end
     end
     return new_freight

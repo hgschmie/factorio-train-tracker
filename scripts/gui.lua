@@ -8,7 +8,7 @@ local Player = require('stdlib.event.player')
 
 local const = require('lib.constants')
 
-local EntityTab = require('scripts.gui.entity_tab')
+local EntityTab = require('scripts.entity_tab')
 local Sorting = require('scripts.sorting')
 
 ---@class tt.TabState
@@ -256,6 +256,18 @@ function Gui.onTabChanged(event)
 
     local filter_text = assert(gui:find_element('filter-text'))
     filter_text.text = tab_state.search or ''
+
+    for i=1, table_size(event.element.tabs) do
+        if i ~= tab_index then
+            local tab = assert(event.element.tabs[i])
+            local entity_type = assert(tab.tab.tags.entity_type)
+            local tab_name = assert(tab.tab.tags.tab_name)
+            local tab_prefix = entity_type .. '_' .. tab_name
+            local entity_table = tab_prefix .. '_table'
+            local element = assert(gui:find_element(entity_table))
+            element.clear()
+        end
+    end
 
     ---@type tt.GuiContext
     local context = gui.context

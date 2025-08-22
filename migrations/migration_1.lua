@@ -2,6 +2,8 @@
 -- debug migrations
 ------------------------------------------------------------------------
 
+local const = require('lib.constants')
+
 This = require('lib.this')
 
 This.TrainTracker:init()
@@ -18,7 +20,7 @@ end
 -- fix up missing fields, remove invalid trains
 for train_id, train in pairs(storage.tt_data.trains) do
     if  trains[train_id] then
-        train.train_name = assert(This.TrainTracker.getMainLocomotive(trains[train_id])).backer_name
+        train.train_name = assert(const.getMainLocomotive(trains[train_id])).backer_name
         train.train_id = train_id
         train.signal_waittime = train.signal_waittime or 0
         train.stop_waittime = train.stop_waittime or 0

@@ -6,6 +6,10 @@ assert(script)
 local math = require('stdlib.utils.math')
 local const = require('lib.constants')
 
+local Tree = require('scripts.tree')
+
+local FREIGHT_COLUMN_COUNT = 8
+
 ---@class tt.Sorting
 ---@field keys string[]
 ---@field sorting table<string, tt.SortColumn>
@@ -25,7 +29,8 @@ local Sorting = {
         'current_station',
         'next_station',
         'state',
-        'freight',
+        'current_freight',
+        'total_freight'
     },
     sorting = {},
 }
@@ -97,6 +102,61 @@ local function format_time(tick_value)
     return ('%02d:%02d:%05.2fs'):format(hours, minutes, seconds)
 end
 
+---@param freight tt.Freight
+---@param parent LuaGuiElement
+---@param name string
+local function freight_formatter(freight, parent, name)
+
+    local child = parent.add {
+        type = 'table',
+        style = 'compact_slot_table',
+        name = name,
+        column_count = FREIGHT_COLUMN_COUNT,
+    }
+
+    child.style.width = FREIGHT_COLUMN_COUNT * 38
+
+    local tree = Tree.create(compare_string)
+    for key in pairs(freight) do
+        tree:add(key)
+    end
+
+    local count = 0
+
+    local add_freight_item = function(key)
+        local freight_item = freight[key]
+        local type = freight_item.type
+
+        child.add {
+            type = 'sprite-button',
+            sprite = ('%s/%s'):format(type, freight_item.name),
+            number = freight_item.count,
+            quality = freight_item.quality,
+            style = 'compact_slot',
+            tooltip = freight_item.count,
+            elem_tooltip = {
+                name = freight_item.name,
+                type = type == 'item' and 'item-with-quality' or 'fluid',
+                quality = freight_item.quality,
+            },
+            enabled = true,
+
+        }
+        count = count + 1
+    end
+
+    tree:traverse(add_freight_item)
+
+    while (count % FREIGHT_COLUMN_COUNT) > 0 do
+        child.add {
+            type = 'sprite',
+            enabled = true,
+        }
+        count = count + 1
+    end
+end
+
+
 ------------------------------------------------------------------------
 -- tag functions
 ------------------------------------------------------------------------
@@ -110,7 +170,7 @@ local function tag_train_id(gui, train_info)
     return {
         id = train_info.train_id,
         handler = {
-            [defines.events.on_gui_click] = gui.gui_events.onClickEntity
+            [defines.events.on_gui_click] = gui.gui_events.onClickEntity,
         },
     }
 end
@@ -290,43 +350,30 @@ Sorting.tab_info = {
         end,
         alignment = 'left',
     },
-    [Sorting.sorting.freight] = {
+    [Sorting.sorting.current_freight] = {
+        comparator = function(a, b)
+            local left = table_size(a.current_freight)
+            local right = table_size(b.current_freight)
+            local result = math.sign(right - left)
+            if result ~= 0 then return result end
+            return compare_train_id(a, b)
+        end,
         formatter = function(train_info, entity_type, parent, name)
-            local child = parent.add {
-                type = 'table',
-                style = 'filter_slot_table',
-                name = name,
-                column_count = 10,
-            }
-
-            local count = 0
-            for _, freight_item in pairs(train_info.total_freight) do
-                local type = freight_item.quality and 'item' or 'fluid'
-
-                child.add {
-                    type = 'sprite-button',
-                    sprite = ('%s/%s'):format(type, freight_item.name),
-                    number = freight_item.count,
-                    quality = freight_item.quality,
-                    style = 'compact_slot',
-                    tooltip = prototypes[type][freight_item.name].localised_name,
-                    elem_tooltip = {
-                        name = freight_item.name,
-                        type = type,
-                        quality = freight_item.quality,
-                    },
-                    enabled = true,
-
-                }
-                count = count + 1
-            end
-            while (count % 10) > 0 do
-                child.add {
-                    type = 'sprite',
-                    enabled = true,
-                }
-                count = count + 1
-            end
+            return freight_formatter(train_info.current_freight, parent, name)
+        end,
+        alignment = 'left',
+        raw = true,
+    },
+    [Sorting.sorting.total_freight] = {
+        comparator = function(a, b)
+            local left = table_size(a.total_freight)
+            local right = table_size(b.total_freight)
+            local result = math.sign(right - left)
+            if result ~= 0 then return result end
+            return compare_train_id(a, b)
+        end,
+        formatter = function(train_info, entity_type, parent, name)
+            return freight_formatter(train_info.total_freight, parent, name)
         end,
         alignment = 'left',
         raw = true,

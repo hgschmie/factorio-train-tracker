@@ -44,21 +44,6 @@ local TrainTracker = {
 -- helpers
 ------------------------------------------------------------------------
 
----@param train LuaTrain
----@return LuaEntity? locomotive
-function TrainTracker.getMainLocomotive(train)
-    if not train.valid then return nil end
-    return #train.locomotives.front_movers > 0 and train.locomotives.front_movers[1] or train.locomotives.back_movers[1]
-end
-
----@param train LuaTrain
----@return string? name
-local function get_train_name(train)
-    local loco = TrainTracker.getMainLocomotive(train)
-    return (loco and loco.valid) and loco.backer_name or nil
-end
-
-
 ---@param station_name string the station name
 ---@param candidate_rails table<integer, boolean>
 local function find_station(station_name, candidate_rails)
@@ -113,26 +98,29 @@ end
 
 ---@param train LuaTrain
 ---@return tt.Freight
-local function get_freight_from_train(train)
+function TrainTracker:getFreightFromTrain(train)
     local freight = {}
 
     for _, item in pairs(train.get_contents()) do
         local quality = item.quality or 'normal'
-        local key = ('%s__%s'):format(item.name, quality)
-        freight[key] = {
+        local freight_item = {
             type = 'item',
             name = item.name,
             quality = quality,
             count = item.count,
         }
+        local key = const.getFreightSortKey(freight_item)
+        freight[key] = freight_item
     end
 
     for k, v in pairs(train.get_fluid_contents()) do
-        freight[k] = {
+        local freight_fluid = {
             type = 'fluid',
             name = k,
             count = v,
         }
+        local key = const.getFreightSortKey(freight_fluid)
+        freight[key] = freight_fluid
     end
 
     return freight
@@ -156,7 +144,7 @@ local function create_train_info(train)
         total_waittime = 0,
         stop_waittime = 0,
         signal_waittime = 0,
-        train_name = get_train_name(train),
+        train_name = const.getTrainName(train),
         train_id = train.id,
         total_freight = {},
     }
@@ -166,7 +154,7 @@ end
 ---@return string entity_type
 function TrainTracker:determineEntityType(train)
     if const.has_ships then
-        local loco = self.getMainLocomotive(train)
+        local loco = const.getMainLocomotive(train)
         if loco and const.ship_names[loco.name] then return const.entity_types.ships end
     end
     return const.entity_types.trains
@@ -260,103 +248,115 @@ end
 -- event callbacks
 ------------------------------------------------------------------------
 
+-- Called when the current state is defines.train_state.wait_station
 ---@param train LuaTrain
----@param old_state defines.train_state
 ---@param event_tick integer
-function TrainTracker:trainArrived(train, old_state, event_tick)
+---@return tt.TrainInfo?
+function TrainTracker:processStationArrival(train, event_tick)
     local entity_type = self:determineEntityType(train)
-    if not entity_type then return end -- trains without engines are ignored
+    if not entity_type then return nil end -- trains without engines are ignored
 
     local train_info = self:getOrCreateEntity(entity_type, train)
 
-    if old_state == defines.train_state.arrive_station then -- "arrive at station" -> "wait at station"
-        train_info.total_runtime = train_info.total_runtime + (event_tick - train_info.last_tick)
-        if train.station and train.station.valid then train_info.current_station = train.station end
+    -- last tick holds the time of the last runtime update
+    train_info.total_runtime = train_info.total_runtime + (event_tick - train_info.last_tick)
+    if train.station and train.station.valid then train_info.current_station = train.station end
 
-        if train_info.last_station and train_info.last_station.valid and train_info.last_station.connected_rail
-            and train_info.current_station and train_info.current_station.connected_rail then
-            local path_result = game.train_manager.request_train_path {
-                starts = {
-                    {
-                        rail = train_info.last_station.connected_rail,
-                        direction = defines.rail_direction.front,
-                    },
-                    {
-                        rail = train_info.last_station.connected_rail,
-                        direction = defines.rail_direction.back,
-                    },
+    if train_info.last_station and train_info.last_station.valid and train_info.last_station.connected_rail
+        and train_info.current_station and train_info.current_station.connected_rail then
+        local path_result = game.train_manager.request_train_path {
+            starts = {
+                {
+                    rail = train_info.last_station.connected_rail,
+                    direction = defines.rail_direction.front,
                 },
-                goals = { train_info.current_station },
-            }
+                {
+                    rail = train_info.last_station.connected_rail,
+                    direction = defines.rail_direction.back,
+                },
+            },
+            goals = { train_info.current_station },
+        }
 
-            if path_result.found_path then
-                train_info.total_distance = train_info.total_distance + path_result.total_length
-            end
+        if path_result.found_path then
+            train_info.total_distance = train_info.total_distance + path_result.total_length
         end
-
-        train_info.next_station = get_next_station(train)
-        train_info.current_freight = get_freight_from_train(train)
-    elseif old_state == defines.train_state.arrive_signal then -- "arrive at signal" -> "wait at signal"
-        train_info.total_runtime = train_info.total_runtime + (event_tick - train_info.last_tick)
-    else
-        return
     end
 
-    train_info.last_state = train.state
-    train_info.last_tick = event_tick
-    train_info.train_name = get_train_name(train)
-    train_info.train_id = train.id
+    train_info.next_station = get_next_station(train)
+    train_info.current_freight = self:getFreightFromTrain(train)
+    return train_info
 end
 
+-- Arriving at a signal. Just update the train_info state
 ---@param train LuaTrain
----@param old_state defines.train_state
 ---@param event_tick integer
-function TrainTracker:trainDeparted(train, old_state, event_tick)
+---@return tt.TrainInfo?
+function TrainTracker:processSignalArrival(train, event_tick)
     local entity_type = self:determineEntityType(train)
-    if not entity_type then return end -- trains without engines are ignored
+    if not entity_type then return nil end -- trains without engines are ignored
+
     local train_info = self:getOrCreateEntity(entity_type, train)
 
-    if old_state == defines.train_state.wait_station then -- "wait station" -> "on the path"
-        if train_info.last_state == defines.train_state.wait_station then
-            local wait_time = (event_tick - train_info.last_tick)
-            train_info.total_waittime = train_info.total_waittime + wait_time
-            train_info.stop_waittime = (train_info.stop_waittime or 0) + wait_time
+    -- update the total runtime as the last_tick will be overwritten
+    train_info.total_runtime = train_info.total_runtime + (event_tick - train_info.last_tick)
+    return train_info
+end
 
-            train_info.last_station = train_info.current_station
-            train_info.current_station = nil
-            train_info.next_station = get_next_station(train)
+-- Called when the old state was wait_signal. We just left a signal
+---@param train LuaTrain
+---@param event_tick integer
+---@return tt.TrainInfo?
+function TrainTracker:processSignalDeparture(train, event_tick)
+    local entity_type = self:determineEntityType(train)
+    if not entity_type then return nil end -- trains without engines are ignored
 
-            local old_freight = train_info.current_freight
-            if old_freight and table_size(old_freight) > 0 then
-                -- calculate diff between old and new. diff is total freight transported
-                local new_freight = get_freight_from_train(train)
-                for k, v in pairs(old_freight) do
-                    local diff = new_freight[k] and (v.count - new_freight[k].count) or v.count
-                    if diff > 0 then
-                        if train_info.total_freight[k] then
-                            train_info.total_freight[k].count = train_info.total_freight[k].count + diff
-                        else
-                            train_info.total_freight[k] = v
-                            train_info.total_freight[k].count = diff
-                        end
-                    end
+    local train_info = self:getOrCreateEntity(entity_type, train)
+
+    local wait_time = (event_tick - train_info.last_tick)
+    train_info.total_waittime = train_info.total_waittime + wait_time
+    train_info.signal_waittime = (train_info.signal_waittime or 0) + wait_time
+
+    return train_info
+end
+
+-- Called when the old state was wait_station. We just left a station
+---@param train LuaTrain
+---@param event_tick integer
+---@return tt.TrainInfo?
+function TrainTracker:processStationDeparture(train, event_tick)
+    local entity_type = self:determineEntityType(train)
+    if not entity_type then return nil end -- trains without engines are ignored
+
+    local train_info = self:getOrCreateEntity(entity_type, train)
+
+    local wait_time = (event_tick - train_info.last_tick)
+    train_info.total_waittime = train_info.total_waittime + wait_time
+    train_info.stop_waittime = (train_info.stop_waittime or 0) + wait_time
+
+    train_info.last_station = train_info.current_station
+    train_info.current_station = nil
+    train_info.next_station = get_next_station(train)
+
+    local old_freight = train_info.current_freight
+    if old_freight and table_size(old_freight) > 0 then
+        -- calculate diff between old and new. diff is total freight transported
+        local new_freight = self:getFreightFromTrain(train)
+        for k, v in pairs(old_freight) do
+            local diff = new_freight[k] and (v.count - new_freight[k].count) or v.count
+            if diff > 0 then
+                if train_info.total_freight[k] then
+                    train_info.total_freight[k].count = train_info.total_freight[k].count + diff
+                else
+                    train_info.total_freight[k] = v
+                    train_info.total_freight[k].count = diff
                 end
             end
         end
-    elseif old_state == defines.train_state.wait_signal then -- "wait signal" -> "on the path"
-        if train_info.last_state == defines.train_state.wait_signal then
-            local wait_time = (event_tick - train_info.last_tick)
-            train_info.total_waittime = train_info.total_waittime + wait_time
-            train_info.signal_waittime = (train_info.signal_waittime or 0) + wait_time
-        end
-    else
-        return
     end
+    train_info.current_freight = self:getFreightFromTrain(train)
 
-    train_info.last_state = train.state
-    train_info.last_tick = event_tick
-    train_info.train_name = get_train_name(train)
-    train_info.train_id = train.id
+    return train_info
 end
 
 ------------------------------------------------------------------------

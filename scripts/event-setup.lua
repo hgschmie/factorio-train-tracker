@@ -19,14 +19,47 @@ local function on_train_changed_state(event)
     local train = event and event.train
     if not train then return end
 
-    if train.state == defines.train_state.wait_station then
-        if not (train.station and train.station.valid) then return end
-        This.TrainTracker:trainArrived(train, event.old_state, event.tick)
-    elseif train.state == defines.train_state.wait_signal then
-        This.TrainTracker:trainArrived(train, event.old_state, event.tick)
-    elseif train.state == defines.train_state.on_the_path then
-        This.TrainTracker:trainDeparted(train, event.old_state, event.tick)
+    -- this happens when the train arrives but the station is not valid. It then does a wait -> arrive -> wait cycle
+    if train.state == defines.train_state.arrive_station and event.old_state == defines.train_state.wait_station then return end
+
+    local train_name = const.getTrainName(train)
+
+    local update_train_info = function(train_info)
+        if not train_info then return end
+        train_info.last_state = train.state
+        train_info.last_tick = event.tick
+        train_info.train_name = train_name
+        train_info.train_id = train.id
     end
+
+    local process_old_state = function()
+        if event.old_state == defines.train_state.wait_station then
+            -- station departure
+            return This.TrainTracker:processStationDeparture(train, event.tick)
+        elseif event.old_state == defines.train_state.wait_signal then
+            -- signal departure
+            return This.TrainTracker:processSignalDeparture(train, event.tick)
+        end
+        return nil
+    end
+
+    local train_info = process_old_state()
+    update_train_info(train_info)
+
+    local process_train_state = function()
+        if train.state == defines.train_state.wait_station then
+            if not (train.station and train.station.valid) then return nil end
+            -- station arrival. Housekeep all the run information
+            return This.TrainTracker:processStationArrival(train, event.tick)
+        elseif train.state == defines.train_state.wait_signal then
+            -- signal arrival
+            return This.TrainTracker:processSignalArrival(train, event.tick)
+        end
+        return nil
+    end
+
+    process_train_state()
+    update_train_info(train_info)
 end
 
 ---@param event EventData.on_train_created
