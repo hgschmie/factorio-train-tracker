@@ -98,7 +98,8 @@ function FrameworkGuiManager:dispatch(event)
     elseif type(elem.tags.handler) == 'table' then
         -- tag defined handler table.
         -- use per-element registered handler
-        handler_id = elem.tags.handler[event.name]
+        -- workaround for https://forums.factorio.com/viewtopic.php?t=130401
+        handler_id = elem.tags.handler[event.name] or elem.tags.handler[tostring(event.name)]
         local event_handler = gui_type.events[handler_id]
         if not event_handler then return false end
         event_handler(event, gui)
