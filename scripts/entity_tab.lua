@@ -309,8 +309,10 @@ local function create_gui_pane(entity_type)
             train_table.clear()
 
             -- add headers
-            for _, column_name in pairs(columns) do
-                if Sorting.tab_info[column_name].comparator then
+            for index, column_name in pairs(columns) do
+                local tab_info = assert(Sorting.tab_info[column_name])
+                train_table.style.column_alignments[index] = tab_info.alignment
+                if tab_info.comparator then
                     add_checkbox(gui, train_table, entity_type, tab_name, column_name)
                 else
                     add_heading(train_table, entity_type, tab_name, column_name)
@@ -335,7 +337,8 @@ local function create_gui_pane(entity_type)
                     else
                         local tags = tab_info.tags and tab_info.tags(gui, train_info) or nil
 
-                        train_table.add {
+                        ---@type LuaGuiElement
+                        local child = train_table.add {
                             type = 'label',
                             name = name,
                             caption = tab_info.formatter(train_info, entity_type, train_table, name) or { const:locale('unknown') },
@@ -343,6 +346,8 @@ local function create_gui_pane(entity_type)
                             tags = tags,
                             tooltip = tags and { const:locale('open_gui_' .. (tab_info.tooltip or column_name)) },
                         }
+                        child.style.horizontal_align = tab_info.alignment
+
                     end
                 end
 

@@ -8,11 +8,16 @@
   "homepage": "https://github.com/hgschmie/factorio-train-tracker",
   "factorio_version": "2.0",
   "dependencies": [
-    "base >= 2.0.48"
+    "base >= 2.0.60"
   ],
   "package": {
     "git_publish_branch": "main",
     "readme": "README.md",
+    "gallery": [
+      "portal/gui-1.png",
+      "portal/gui-2.png",
+      "portal/gui-3.png"
+    ],
     "sync_portal_details": true,
     "ignore": [
       "portal/*",
