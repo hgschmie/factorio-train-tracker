@@ -10,7 +10,7 @@ local framework_settings = {
         type = 'bool-setting',
         name = Framework.PREFIX .. 'debug-mode',
         order = 'z',
-        setting_type = 'runtime-global',
+        setting_type = 'startup',
         default_value = false,
     },
 }
