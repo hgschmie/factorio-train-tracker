@@ -330,6 +330,7 @@ styles.framework_shallow_scroll_pane = {
 
 -- TABBED PANE STYLES
 
+-- used by train-tracker
 styles.framework_tabbed_pane_parent = {
     type = 'frame_style',
     parent = 'inside_deep_frame',

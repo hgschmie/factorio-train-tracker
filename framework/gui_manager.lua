@@ -145,13 +145,13 @@ end
 ------------------------------------------------------------------------
 
 --- Registers a GUI type with the event table and callback with the GUI manager.
----@param type string
+---@param gui_type string
 ---@param event_definition framework.gui_manager.event_definition
-function FrameworkGuiManager:register_gui_type(type, event_definition)
-    assert(type)
+function FrameworkGuiManager:register_gui_type(gui_type, event_definition)
+    assert(gui_type)
     assert(event_definition.events, 'events is unset!')
 
-    self.known_gui_types[type] = event_definition
+    self.known_gui_types[gui_type] = event_definition
 end
 
 --- Creates a new GUI instance.

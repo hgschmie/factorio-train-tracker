@@ -101,6 +101,8 @@ local stupid_events = {
     [defines.events.on_entity_cloned] = 'destination'
 }
 
+---@alias stdlib.event_type defines.events | integer | string
+
 --- Registers a handler for the given events.
 -- If a `nil` handler is passed, remove the given events and stop listening to them.
 -- <p>Events dispatch in the order they are registered.
@@ -115,7 +117,7 @@ local stupid_events = {
 -- Event.register(-120, function() game.print('Every 120 ticks') end
 -- -- Function call chaining
 -- Event.register(event1, handler1).register(event2, handler2)
---- @param event_id defines.events | integer | string
+--- @param event_id stdlib.event_type | stdlib.event_type[]
 --- @param handler fun(event: EventData)
 --- @param filter (fun(event: EventData, pattern: any?): boolean)?
 --- @param pattern  any?
