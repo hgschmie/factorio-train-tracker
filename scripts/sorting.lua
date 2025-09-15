@@ -80,14 +80,6 @@ local function format_string(value)
     return value and tostring(value) or nil
 end
 
----@param value number?
----@return string
-local function format_distance(value)
-    if value == 0 then return '0m' end
-    if value < 10000 then return ('%.2fm'):format(value) end
-    return ('%.2fkm'):format(value / 1000)
-end
-
 ---@param tick_value number?
 ---@return string
 local function format_time(tick_value)
@@ -251,7 +243,7 @@ Sorting.tab_info = {
             return compare_train_id(a, b)
         end,
         formatter = function(train_info)
-            return format_distance(train_info.total_distance)
+            return const.formatDistance(train_info.total_distance)
         end,
         alignment = 'right',
     },

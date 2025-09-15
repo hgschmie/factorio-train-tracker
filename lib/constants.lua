@@ -110,6 +110,14 @@ function Constants.getStationName(station, default)
     return default
 end
 
+---@param value number?
+---@return string
+function Constants.formatDistance(value)
+    if value == 0 then return '0m' end
+    if value < 10000 then return ('%.2fm'):format(value) end
+    return ('%.2fkm'):format(value / 1000)
+end
+
 ---@type (fun(train_info: tt.TrainInfo, entity_type: string?, player: LuaPlayer?): string?)[]
 Constants.filter_dropdown_values = {
     function(train_info) return tostring(train_info.train_id) end,
