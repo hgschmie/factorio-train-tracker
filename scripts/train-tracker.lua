@@ -37,7 +37,9 @@ local math = require('stdlib.utils.math')
 ---@field ships table<integer, tt.TrainInfo>
 
 ---@class tt.TrainTracker
+---@field DEBUG_MODE boolean
 local TrainTracker = {
+    DEBUG_MODE = Framework.settings:startup_setting('debug_mode')
 }
 
 ------------------------------------------------------------------------
@@ -262,25 +264,9 @@ function TrainTracker:processStationArrival(train, event_tick)
     train_info.total_runtime = train_info.total_runtime + (event_tick - train_info.last_tick)
     if train.station and train.station.valid then train_info.current_station = train.station end
 
-    if train_info.last_station and train_info.last_station.valid and train_info.last_station.connected_rail
-        and train_info.current_station and train_info.current_station.connected_rail then
-        local path_result = game.train_manager.request_train_path {
-            starts = {
-                {
-                    rail = train_info.last_station.connected_rail,
-                    direction = defines.rail_direction.front,
-                },
-                {
-                    rail = train_info.last_station.connected_rail,
-                    direction = defines.rail_direction.back,
-                },
-            },
-            goals = { train_info.current_station },
-        }
-
-        if path_result.found_path then
-            train_info.total_distance = train_info.total_distance + path_result.total_length
-        end
+    if self.DEBUG_MODE then
+        game.print(('[font=debug-mono][train-tracker][Station Arrival]  [/font]Train Id: %d, Station Name: %s'):format(
+            train.id, const.getStationName(train_info.current_station)), { sound = defines.print_sound.never })
     end
 
     train_info.next_station = get_next_station(train)
