@@ -19,9 +19,6 @@ local function on_train_changed_state(event)
     local train = event and event.train
     if not train then return end
 
-    -- this happens when the train arrives but the station is not valid. It then does a wait -> arrive -> wait cycle
-    if train.state == defines.train_state.arrive_station and event.old_state == defines.train_state.wait_station then return end
-
     local train_name = const.getTrainName(train)
 
     local update_train_info = function(train_info)
@@ -47,15 +44,17 @@ local function on_train_changed_state(event)
     update_train_info(train_info)
 
     local process_train_state = function()
-        if train.state == defines.train_state.wait_station then
-            if not (train.station and train.station.valid) then return nil end
+        if train.state == defines.train_state.arrive_station then
+            return This.TrainTracker:updateDistanceTravelled(train, event.tick)
+        elseif train.state == defines.train_state.wait_station then
             -- station arrival. Housekeep all the run information
             return This.TrainTracker:processStationArrival(train, event.tick)
         elseif train.state == defines.train_state.wait_signal then
             -- signal arrival
             return This.TrainTracker:processSignalArrival(train, event.tick)
+        else
+            return nil
         end
-        return nil
     end
 
     process_train_state()

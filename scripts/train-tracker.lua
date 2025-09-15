@@ -20,6 +20,7 @@ local math = require('stdlib.utils.math')
 ---@field last_state defines.train_state?
 ---@field last_station LuaEntity?
 ---@field current_station LuaEntity?
+---@field current_distance integer?
 ---@field next_station (LuaEntity|string)?
 ---@field last_tick integer
 ---@field total_distance integer
@@ -260,17 +261,53 @@ function TrainTracker:processStationArrival(train, event_tick)
 
     local train_info = self:getOrCreateEntity(entity_type, train)
 
+    -- arriving at a stop without station (e.g. a temp stop or a stop defined by a specific rail piece)
+    -- this is what LTN uses to select the exact station to send a train to. Do not update the state, this
+    -- will be immediately followed by another station arrival at the actual station.
+    if not (train.station and train.station.valid) then return train_info end
+
     -- last tick holds the time of the last runtime update
     train_info.total_runtime = train_info.total_runtime + (event_tick - train_info.last_tick)
-    if train.station and train.station.valid then train_info.current_station = train.station end
+    train_info.current_station = train.station
 
     if self.DEBUG_MODE then
         game.print(('[font=debug-mono][train-tracker][Station Arrival]  [/font]Train Id: %d, Station Name: %s'):format(
             train.id, const.getStationName(train_info.current_station)), { sound = defines.print_sound.never })
     end
 
+    train_info.current_distance = train_info.current_distance or 0
+    train_info.total_distance = train_info.total_distance + train_info.current_distance
+
+    if self.DEBUG_MODE then
+        game.print(('[font=debug-mono][train-tracker][Added Distance]   [/font]Train Id: %d, %s -> %s: %s (total: %s)'):format(
+            train.id,
+            const.getStationName(train_info.last_station, '<unset>'),
+            const.getStationName(train_info.current_station, '<unset>'),
+            const.formatDistance(train_info.current_distance),
+            const.formatDistance(train_info.total_distance)))
+    end
+
+    train_info.current_distance = 0
     train_info.next_station = get_next_station(train)
     train_info.current_freight = self:getFreightFromTrain(train)
+
+    return train_info
+end
+
+-- About to arrive at a station. Update the travel distance.
+---@param train LuaTrain
+---@param event_tick integer
+---@return tt.TrainInfo?
+function TrainTracker:updateDistanceTravelled(train, event_tick)
+    if not train.path then return nil end -- trains without paths are ignored
+
+    local entity_type = self:determineEntityType(train)
+    if not entity_type then return nil end -- trains without engines are ignored
+
+    local train_info = self:getOrCreateEntity(entity_type, train)
+
+    train_info.current_distance = (train_info.current_distance or 0) + train.path.total_distance
+
     return train_info
 end
 
@@ -283,6 +320,9 @@ function TrainTracker:processSignalArrival(train, event_tick)
     if not entity_type then return nil end -- trains without engines are ignored
 
     local train_info = self:getOrCreateEntity(entity_type, train)
+
+    -- The path distance will reset when departing the signal
+    train_info.current_distance = (train_info.current_distance or 0) + train.path.travelled_distance
 
     -- update the total runtime as the last_tick will be overwritten
     train_info.total_runtime = train_info.total_runtime + (event_tick - train_info.last_tick)
@@ -315,6 +355,18 @@ function TrainTracker:processStationDeparture(train, event_tick)
     if not entity_type then return nil end -- trains without engines are ignored
 
     local train_info = self:getOrCreateEntity(entity_type, train)
+
+    -- this happens when the train arrives at a temp stop first (like the one set up by LTN). In this case,
+    -- the train arrives (arrive_station -> wait_station transition) without a valid station; then LTN updates the schedule by removing
+    -- the temp stop (which results in a wait_station -> arrive_station transition).
+    -- ignore this, it will still update the travelled distance and the next transition (arrive_station -> wait_station) completes the
+    -- tracker update.
+    if train.state == defines.train_state.arrive_station then return train_info end
+
+    if self.DEBUG_MODE then
+        game.print(('[font=debug-mono][train-tracker][Station Departure][/font]Train Id: %d, Station Name: %s'):format(
+            train.id, const.getStationName(train_info.current_station, '<unset>')), { sound = defines.print_sound.never })
+    end
 
     local wait_time = (event_tick - train_info.last_tick)
     train_info.total_waittime = train_info.total_waittime + wait_time
