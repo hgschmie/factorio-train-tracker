@@ -290,15 +290,15 @@ Sorting.tab_info = {
     },
     [Sorting.sorting.last_station] = {
         comparator = function(a, b)
-            local left = const.get_station_name(a.last_station)
-            local right = const.get_station_name(b.last_station)
+            local left = const.getStationName(a.last_station)
+            local right = const.getStationName(b.last_station)
             local result = compare_string(left, right)
             if result ~= 0 then return result end
 
             return compare_train_id(a, b)
         end,
         formatter = function(train_info)
-            return const.get_station_name(train_info.last_station, '')
+            return const.getStationName(train_info.last_station, '')
         end,
         tags = tag_last_station_id,
         alignment = 'left',
@@ -306,15 +306,15 @@ Sorting.tab_info = {
     },
     [Sorting.sorting.current_station] = {
         comparator = function(a, b)
-            local left = const.get_station_name(a.current_station)
-            local right = const.get_station_name(b.current_station)
+            local left = const.getStationName(a.current_station)
+            local right = const.getStationName(b.current_station)
             local result = compare_string(left, right)
             if result ~= 0 then return result end
 
             return compare_train_id(a, b)
         end,
         formatter = function(train_info)
-            return const.get_station_name(train_info.current_station, '')
+            return const.getStationName(train_info.current_station, '')
         end,
         tags = tag_current_station_id,
         alignment = 'left',
@@ -322,15 +322,15 @@ Sorting.tab_info = {
     },
     [Sorting.sorting.next_station] = {
         comparator = function(a, b)
-            local left = const.get_station_name(a.next_station)
-            local right = const.get_station_name(b.next_station)
+            local left = const.getStationName(a.next_station)
+            local right = const.getStationName(b.next_station)
             local result = compare_string(left, right)
             if result ~= 0 then return result end
 
             return compare_train_id(a, b)
         end,
         formatter = function(train_info)
-            return const.get_station_name(train_info.next_station, '')
+            return const.getStationName(train_info.next_station, '')
         end,
         tags = tag_next_station_id,
         alignment = 'left',

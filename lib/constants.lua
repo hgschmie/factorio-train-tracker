@@ -102,7 +102,7 @@ Constants.filter_dropdown = {
 ---@param station (string|LuaEntity)?
 ---@param default string?
 ---@return string station_name
-function Constants.get_station_name(station, default)
+function Constants.getStationName(station, default)
     if station then
         if type(station) == 'string' then return station end
         if station.valid then return station.backer_name end
@@ -114,9 +114,9 @@ end
 Constants.filter_dropdown_values = {
     function(train_info) return tostring(train_info.train_id) end,
     function(train_info) return train_info.train_name end,
-    function(train_info) return Constants.get_station_name(train_info.last_station, '') end,
-    function(train_info) return Constants.get_station_name(train_info.current_station, '') end,
-    function(train_info) return Constants.get_station_name(train_info.next_station, '') end,
+    function(train_info) return Constants.getStationName(train_info.last_station, '') end,
+    function(train_info) return Constants.getStationName(train_info.current_station, '') end,
+    function(train_info) return Constants.getStationName(train_info.next_station, '') end,
     function(train_info, entity_type, player)
         local state = train_info.last_state
         if not state then return nil end
