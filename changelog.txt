@@ -3,9 +3,10 @@ Version: 1.0.1
 Date: ????
   Changes:
     - move debug setting to startup
-    - change distance computing to use the actual train path and don't try to recompute. This
-      works around a shortcoming in the train manager to compute pathes between stations in
-      certain circumstances.
+    - change distance computing to use the actual train path and don't try to recompute. The
+      train does not actually leave from the station but from a rail that is a little bit before
+      the station. As a result, the train manager sometimes could not compute a path that a train
+      was travelling just fine.
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.0
 Date: 2025-08-23
