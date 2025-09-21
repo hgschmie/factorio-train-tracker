@@ -17,10 +17,10 @@ local math = require('stdlib.utils.math')
 ---@alias tt.Freight table<string, tt.FreightItem>
 
 ---@class tt.TrainInfo
----@field last_state defines.train_state?
----@field last_station LuaEntity?
----@field current_station LuaEntity?
----@field current_distance integer?
+---@field last_state defines.train_state?     Last state seen for the train
+---@field last_station LuaEntity?             Last stop for the train
+---@field current_station LuaEntity?          Current train stop
+---@field current_distance integer?           Total distance that the train will travel between two stops
 ---@field next_station (LuaEntity|string)?
 ---@field last_tick integer
 ---@field total_distance integer
@@ -294,23 +294,6 @@ function TrainTracker:processStationArrival(train, event_tick)
     return train_info
 end
 
--- About to arrive at a station. Update the travel distance.
----@param train LuaTrain
----@param event_tick integer
----@return tt.TrainInfo?
-function TrainTracker:updateDistanceTravelled(train, event_tick)
-    if not train.path then return nil end -- trains without paths are ignored
-
-    local entity_type = self:determineEntityType(train)
-    if not entity_type then return nil end -- trains without engines are ignored
-
-    local train_info = self:getOrCreateEntity(entity_type, train)
-
-    train_info.current_distance = (train_info.current_distance or 0) + train.path.total_distance
-
-    return train_info
-end
-
 -- Arriving at a signal. Just update the train_info state
 ---@param train LuaTrain
 ---@param event_tick integer
@@ -320,9 +303,6 @@ function TrainTracker:processSignalArrival(train, event_tick)
     if not entity_type then return nil end -- trains without engines are ignored
 
     local train_info = self:getOrCreateEntity(entity_type, train)
-
-    -- The path distance will reset when departing the signal
-    train_info.current_distance = (train_info.current_distance or 0) + train.path.travelled_distance
 
     -- update the total runtime as the last_tick will be overwritten
     train_info.total_runtime = train_info.total_runtime + (event_tick - train_info.last_tick)
@@ -355,6 +335,10 @@ function TrainTracker:processStationDeparture(train, event_tick)
     if not entity_type then return nil end -- trains without engines are ignored
 
     local train_info = self:getOrCreateEntity(entity_type, train)
+
+    if train.path and train.path.valid then
+        train_info.current_distance = (train_info.current_distance or 0) + train.path.total_distance
+    end
 
     -- this happens when the train arrives at a temp stop first (like the one set up by LTN). In this case,
     -- the train arrives (arrive_station -> wait_station transition) without a valid station; then LTN updates the schedule by removing

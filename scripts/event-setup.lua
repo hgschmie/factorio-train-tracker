@@ -44,9 +44,7 @@ local function on_train_changed_state(event)
     update_train_info(train_info)
 
     local process_train_state = function()
-        if train.state == defines.train_state.arrive_station then
-            return This.TrainTracker:updateDistanceTravelled(train, event.tick)
-        elseif train.state == defines.train_state.wait_station then
+        if train.state == defines.train_state.wait_station then
             -- station arrival. Housekeep all the run information
             return This.TrainTracker:processStationArrival(train, event.tick)
         elseif train.state == defines.train_state.wait_signal then
