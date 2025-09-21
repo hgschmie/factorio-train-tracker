@@ -8,6 +8,8 @@ local const = require('lib.constants')
 -- load extended math lib
 local math = require('stdlib.utils.math')
 
+require('stdlib.utils.string')
+
 ---@class tt.FreightItem
 ---@field type 'item'|'fluid'
 ---@field name string
@@ -39,9 +41,20 @@ local math = require('stdlib.utils.math')
 
 ---@class tt.TrainTracker
 ---@field DEBUG_MODE boolean
+---@field DEBUG_TRAIN_ID integer?
 local TrainTracker = {
-    DEBUG_MODE = Framework.settings:startup_setting('debug_mode')
+    DEBUG_MODE = Framework.settings:startup_setting('debug_mode'),
+    DEBUG_TRAIN_ID = nil, -- set a train id to debug only a single train
 }
+
+function TrainTracker:debugPrint(train, prefix, format_func)
+    if not self.DEBUG_MODE then return end
+    if TrainTracker.DEBUG_TRAIN_ID and TrainTracker.DEBUG_TRAIN_ID ~= train.id then return end
+
+    prefix = assert(prefix):ljust(18, ' ')
+    game.print(('[font=debug-mono][train-tracker][%s][/font] (Train: %d) %s'):format(prefix, train.id, format_func()),
+        { sound = defines.print_sound.never, skip = defines.print_skip.never })
+end
 
 ------------------------------------------------------------------------
 -- helpers
@@ -270,22 +283,20 @@ function TrainTracker:processStationArrival(train, event_tick)
     train_info.total_runtime = train_info.total_runtime + (event_tick - train_info.last_tick)
     train_info.current_station = train.station
 
-    if self.DEBUG_MODE then
-        game.print(('[font=debug-mono][train-tracker][Station Arrival]  [/font]Train Id: %d, Station Name: %s'):format(
-            train.id, const.getStationName(train_info.current_station)), { sound = defines.print_sound.never })
-    end
+    self:debugPrint(train, 'Station Arrival', function()
+        return ('Station Name: %s'):format(const.getStationName(train_info.current_station, '<unset>'))
+    end)
 
     train_info.current_distance = train_info.current_distance or 0
     train_info.total_distance = train_info.total_distance + train_info.current_distance
 
-    if self.DEBUG_MODE then
-        game.print(('[font=debug-mono][train-tracker][Added Distance]   [/font]Train Id: %d, %s -> %s: %s (total: %s)'):format(
-            train.id,
+    self:debugPrint(train, 'Distance Added', function()
+        return ('%s -> %s: %s (total: %s)'):format(
             const.getStationName(train_info.last_station, '<unset>'),
             const.getStationName(train_info.current_station, '<unset>'),
             const.formatDistance(train_info.current_distance),
-            const.formatDistance(train_info.total_distance)))
-    end
+            const.formatDistance(train_info.total_distance))
+    end)
 
     train_info.current_distance = 0
     train_info.next_station = get_next_station(train)
@@ -304,6 +315,10 @@ function TrainTracker:processSignalArrival(train, event_tick)
 
     local train_info = self:getOrCreateEntity(entity_type, train)
 
+    self:debugPrint(train, 'Signal Arrival', function()
+        return ('Station Name: %s'):format(const.getStationName(train_info.current_station, '<unset>'))
+    end)
+
     -- update the total runtime as the last_tick will be overwritten
     train_info.total_runtime = train_info.total_runtime + (event_tick - train_info.last_tick)
     return train_info
@@ -318,6 +333,10 @@ function TrainTracker:processSignalDeparture(train, event_tick)
     if not entity_type then return nil end -- trains without engines are ignored
 
     local train_info = self:getOrCreateEntity(entity_type, train)
+
+    self:debugPrint(train, 'Signal Departure', function()
+        return ('Station Name: %s'):format(const.getStationName(train_info.current_station, '<unset>'))
+    end)
 
     local wait_time = (event_tick - train_info.last_tick)
     train_info.total_waittime = train_info.total_waittime + wait_time
@@ -340,17 +359,23 @@ function TrainTracker:processStationDeparture(train, event_tick)
         train_info.current_distance = (train_info.current_distance or 0) + train.path.total_distance
     end
 
+    self:debugPrint(train, 'Station Departure', function()
+        return ('Station Name: %s'):format(const.getStationName(train_info.current_station, '<unset>'))
+    end)
+
+    self:debugPrint(train, 'Estimated Distance', function()
+        return ('%s -> %s: %s'):format(
+            const.getStationName(train_info.last_station, '<unset>'),
+            const.getStationName(train_info.current_station, '<unset>'),
+            const.formatDistance(train_info.current_distance))
+    end)
+
     -- this happens when the train arrives at a temp stop first (like the one set up by LTN). In this case,
     -- the train arrives (arrive_station -> wait_station transition) without a valid station; then LTN updates the schedule by removing
     -- the temp stop (which results in a wait_station -> arrive_station transition).
     -- ignore this, it will still update the travelled distance and the next transition (arrive_station -> wait_station) completes the
     -- tracker update.
     if train.state == defines.train_state.arrive_station then return train_info end
-
-    if self.DEBUG_MODE then
-        game.print(('[font=debug-mono][train-tracker][Station Departure][/font]Train Id: %d, Station Name: %s'):format(
-            train.id, const.getStationName(train_info.current_station, '<unset>')), { sound = defines.print_sound.never })
-    end
 
     local wait_time = (event_tick - train_info.last_tick)
     train_info.total_waittime = train_info.total_waittime + wait_time

@@ -21,6 +21,20 @@ local function on_train_changed_state(event)
 
     local train_name = const.getTrainName(train)
 
+    if This.TrainTracker.DEBUG_TRAIN_ID then
+        This.TrainTracker:debugPrint(train, 'State Change', function()
+            return ('Old State: %s, New State: %s'):format(
+                const.state_names[event.old_state],
+                const.state_names[train.state])
+        end)
+        This.TrainTracker:debugPrint(train, 'State Info', function()
+            return ('Station: %s, Path Length: %s, Path Travelled: %s'):format(
+                const.getStationName(train.station, '-'),
+                train.path and const.formatDistance(train.path.total_distance) or '-',
+                train.path and const.formatDistance(train.path.travelled_distance) or '-')
+        end)
+    end
+
     local update_train_info = function(train_info)
         if not train_info then return end
         train_info.last_state = train.state

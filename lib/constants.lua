@@ -4,6 +4,8 @@
 -- can be loaded into scripts and data
 ------------------------------------------------------------------------
 
+local table = require('stdlib.utils.table')
+
 local Constants = {
     prefix = 'hps__tt-',
     name = 'train-tracker',
@@ -99,6 +101,9 @@ Constants.filter_dropdown = {
     next_station = 5,
     state = 6,
 }
+
+Constants.state_names = table.invert(defines.train_state)
+
 ---@param station (string|LuaEntity)?
 ---@param default string?
 ---@return string station_name
