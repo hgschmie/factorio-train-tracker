@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.1
-Date: ????
+Date: 2025-09-21
   Changes:
     - move debug setting to startup
     - change distance computing to use the actual train path and don't try to recompute. The
