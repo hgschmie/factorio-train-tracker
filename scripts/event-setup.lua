@@ -38,7 +38,7 @@ local function on_train_changed_state(event)
 
         This.TrainTracker:debugPrint(train, 'Event Info', function()
             return ('Station: %s, Path Length: %s, Path Travelled: %s'):format(
-                const.getStationName(train.station, '-'),
+                const.getStationName(train.station) or (train.path_end_rail and train.path_end_rail.gps_tag),
                 train.path and const.formatDistance(train.path.total_distance) or '-',
                 train.path and const.formatDistance(train.path.travelled_distance) or '-')
         end)

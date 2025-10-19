@@ -301,7 +301,7 @@ function TrainTracker:processStationArrival(train, event_tick)
     train_info.current_station = train.station
 
     self:debugPrint(train, 'Station Arrival', function()
-        return ('Station Name: %s'):format(const.getStationName(train_info.current_station, '<unknown>'))
+        return ('Arriving at %s'):format(const.getStationName(train_info.current_station, '<unknown>'))
     end)
 
     train_info.current_distance = train_info.current_distance or 0
@@ -331,7 +331,7 @@ function TrainTracker:processSignalArrival(train, event_tick)
     if not train_info then return nil end
 
     self:debugPrint(train, 'Signal Arrival', function()
-        return ('Signal Position: %s'):format(train.signal and train.signal.gps_tag or '<unknown>')
+        return ('Arriving at %s'):format(train.signal and train.signal.gps_tag or '<unknown>')
     end)
 
     -- update the total runtime as the last_tick will be overwritten
@@ -349,7 +349,7 @@ function TrainTracker:processSignalDeparture(train, event_tick)
     if not train_info then return nil end
 
     self:debugPrint(train, 'Signal Departure', function()
-        return ('Signal Position: %s'):format(train_info.current_signal and train_info.current_signal.gps_tag or '<unknown>')
+        return ('Departing from %s'):format(train_info.current_signal and train_info.current_signal.gps_tag or '<unknown>')
     end)
 
     local wait_time = (event_tick - train_info.last_tick)
@@ -373,7 +373,7 @@ function TrainTracker:processStationDeparture(train, event_tick)
     end
 
     self:debugPrint(train, 'Station Departure', function()
-        return ('Station Name: %s'):format(const.getStationName(train_info.current_station, '<unknown>'))
+        return ('Departing from %s'):format(const.getStationName(train_info.current_station, '<unknown>'))
     end)
 
     self:debugPrint(train, 'Estimated Distance', function()
