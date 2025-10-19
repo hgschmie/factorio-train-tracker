@@ -1,7 +1,9 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.2
 Date: ????
-  Changes:
+  Bugfixes:
+    - fixed a crash bug when the GUI as showing freight and a new train was created (reported by
+      @Yeraso on the forums, thank you!)
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.1
 Date: 2025-09-21

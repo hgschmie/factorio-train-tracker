@@ -32,8 +32,8 @@ require('stdlib.utils.string')
 ---@field stop_waittime integer
 ---@field train_name string
 ---@field train_id integer
----@field current_freight tt.Freight?
----@field total_freight tt.Freight?
+---@field current_freight tt.Freight
+---@field total_freight tt.Freight
 
 ---@class tt.Storage
 ---@field trains table<integer, tt.TrainInfo>
@@ -149,7 +149,8 @@ local function create_train_info(train)
 
     script.register_on_object_destroyed(train)
 
-    return {
+    ---@type tt.TrainInfo
+    local train_info = {
         last_state = train and train.state,
         last_station = nil,
         current_station = train and train.station,
@@ -162,8 +163,11 @@ local function create_train_info(train)
         signal_waittime = 0,
         train_name = const.getTrainName(train),
         train_id = train.id,
+        current_freight = {},
         total_freight = {},
     }
+
+    return train_info
 end
 
 ---@param train LuaTrain

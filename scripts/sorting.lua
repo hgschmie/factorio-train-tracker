@@ -94,7 +94,7 @@ local function format_time(tick_value)
     return ('%02d:%02d:%05.2fs'):format(hours, minutes, seconds)
 end
 
----@param freight tt.Freight
+---@param freight tt.Freight?
 ---@param parent LuaGuiElement
 ---@param name string
 local function freight_formatter(freight, parent, name)
@@ -107,6 +107,8 @@ local function freight_formatter(freight, parent, name)
     }
 
     child.style.width = FREIGHT_COLUMN_COUNT * 38
+
+    if not freight then return end
 
     local tree = Tree.create(compare_string)
     for key in pairs(freight) do
