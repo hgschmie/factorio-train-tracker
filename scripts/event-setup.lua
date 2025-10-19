@@ -76,8 +76,8 @@ end
 ---@param event EventData.on_train_created
 local function on_train_created(event)
     if not (event.train and event.train.valid) then return end
-    local entity_type = This.TrainTracker:determineEntityType(event.train)
-    This.TrainTracker:getOrCreateEntity(entity_type, event.train)
+
+    This.TrainTracker:findEntity(event.train)
 end
 
 ---@param event EventData.on_object_destroyed

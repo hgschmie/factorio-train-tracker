@@ -236,12 +236,23 @@ end
 
 ---@param entity_type string
 ---@param train LuaTrain
----@return tt.TrainInfo Train information
+---@return tt.TrainInfo train_info Train information
 function TrainTracker:getOrCreateEntity(entity_type, train)
+    assert(entity_type)
     local entities = self:entities(entity_type)
     if not entities[train.id] then entities[train.id] = create_train_info(train) end
     return entities[train.id]
 end
+
+---@param train LuaTrain
+---@return tt.TrainInfo? train_info Train information
+function TrainTracker:findEntity(train)
+    local entity_type = self:determineEntityType(train)
+    if not entity_type then return nil end -- trains without engines are ignored
+
+    return self:getOrCreateEntity(entity_type, train)
+end
+
 
 ---@param entity_type string
 ---@param train_id integer
@@ -273,10 +284,8 @@ end
 ---@param event_tick integer
 ---@return tt.TrainInfo?
 function TrainTracker:processStationArrival(train, event_tick)
-    local entity_type = self:determineEntityType(train)
-    if not entity_type then return nil end -- trains without engines are ignored
-
-    local train_info = self:getOrCreateEntity(entity_type, train)
+    local train_info = self:findEntity(train)
+    if not train_info then return nil end
 
     -- arriving at a stop without station (e.g. a temp stop or a stop defined by a specific rail piece)
     -- this is what LTN uses to select the exact station to send a train to. Do not update the state, this
@@ -314,10 +323,8 @@ end
 ---@param event_tick integer
 ---@return tt.TrainInfo?
 function TrainTracker:processSignalArrival(train, event_tick)
-    local entity_type = self:determineEntityType(train)
-    if not entity_type then return nil end -- trains without engines are ignored
-
-    local train_info = self:getOrCreateEntity(entity_type, train)
+    local train_info = self:findEntity(train)
+    if not train_info then return nil end
 
     self:debugPrint(train, 'Signal Arrival', function()
         return ('Station Name: %s'):format(const.getStationName(train_info.current_station, '<unset>'))
@@ -333,10 +340,8 @@ end
 ---@param event_tick integer
 ---@return tt.TrainInfo?
 function TrainTracker:processSignalDeparture(train, event_tick)
-    local entity_type = self:determineEntityType(train)
-    if not entity_type then return nil end -- trains without engines are ignored
-
-    local train_info = self:getOrCreateEntity(entity_type, train)
+    local train_info = self:findEntity(train)
+    if not train_info then return nil end
 
     self:debugPrint(train, 'Signal Departure', function()
         return ('Station Name: %s'):format(const.getStationName(train_info.current_station, '<unset>'))
@@ -354,10 +359,8 @@ end
 ---@param event_tick integer
 ---@return tt.TrainInfo?
 function TrainTracker:processStationDeparture(train, event_tick)
-    local entity_type = self:determineEntityType(train)
-    if not entity_type then return nil end -- trains without engines are ignored
-
-    local train_info = self:getOrCreateEntity(entity_type, train)
+    local train_info = self:findEntity(train)
+    if not train_info then return nil end
 
     if train.path and train.path.valid then
         train_info.current_distance = (train_info.current_distance or 0) + train.path.total_distance
