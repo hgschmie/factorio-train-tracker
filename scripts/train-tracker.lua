@@ -52,7 +52,7 @@ function TrainTracker:debugPrint(train, prefix, format_func)
     if TrainTracker.DEBUG_TRAIN_ID and TrainTracker.DEBUG_TRAIN_ID ~= train.id then return end
 
     prefix = assert(prefix):ljust(18, ' ')
-    game.print(('[font=debug-mono][train-tracker][%s][/font] (Train: %d) %s'):format(prefix, train.id, format_func()),
+    game.print(('[font=debug-mono][train-tracker][%s][%s][/font] (Train: %d) %s'):format(const.formatTime(game.tick), prefix, train.id, format_func()),
         { sound = defines.print_sound.never, skip = defines.print_skip.never })
 end
 
@@ -297,7 +297,7 @@ function TrainTracker:processStationArrival(train, event_tick)
     train_info.current_station = train.station
 
     self:debugPrint(train, 'Station Arrival', function()
-        return ('Station Name: %s'):format(const.getStationName(train_info.current_station, '<unset>'))
+        return ('Station Name: %s'):format(const.getStationName(train_info.current_station, '<unknown>'))
     end)
 
     train_info.current_distance = train_info.current_distance or 0
@@ -305,8 +305,8 @@ function TrainTracker:processStationArrival(train, event_tick)
 
     self:debugPrint(train, 'Distance Added', function()
         return ('%s -> %s: %s (total: %s)'):format(
-            const.getStationName(train_info.last_station, '<unset>'),
-            const.getStationName(train_info.current_station, '<unset>'),
+            const.getStationName(train_info.last_station, '<unknown>'),
+            const.getStationName(train_info.current_station, '<unknown>'),
             const.formatDistance(train_info.current_distance),
             const.formatDistance(train_info.total_distance))
     end)
@@ -367,13 +367,13 @@ function TrainTracker:processStationDeparture(train, event_tick)
     end
 
     self:debugPrint(train, 'Station Departure', function()
-        return ('Station Name: %s'):format(const.getStationName(train_info.current_station, '<unset>'))
+        return ('Station Name: %s'):format(const.getStationName(train_info.current_station, '<unknown>'))
     end)
 
     self:debugPrint(train, 'Estimated Distance', function()
         return ('%s -> %s: %s'):format(
-            const.getStationName(train_info.last_station, '<unset>'),
-            const.getStationName(train_info.current_station, '<unset>'),
+            const.getStationName(train_info.last_station, '<unknown>'),
+            const.getStationName(train_info.current_station, '<unknown>'),
             const.formatDistance(train_info.current_distance))
     end)
 

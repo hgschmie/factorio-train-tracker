@@ -25,15 +25,18 @@ local function on_train_changed_state(event)
 
     if last_change_state == 0 then last_change_state = game.tick end
 
+    -- only run for a single train ever
     if This.TrainTracker.DEBUG_TRAIN_ID then
-        This.TrainTracker:debugPrint(train, 'State Change', function()
-            return ('Old State: %s, New State: %s, Time in state: %s'):format(
-                const.state_names[event.old_state],
+        This.TrainTracker:debugPrint(train, 'Event Change', function()
+            return ('Train now %s, Time in old state %s: %s'):format(
                 const.state_names[train.state],
+                const.state_names[event.old_state],
                 const.formatTime(game.tick - last_change_state))
         end)
+
         last_change_state = game.tick
-        This.TrainTracker:debugPrint(train, 'State Info', function()
+
+        This.TrainTracker:debugPrint(train, 'Event Info', function()
             return ('Station: %s, Path Length: %s, Path Travelled: %s'):format(
                 const.getStationName(train.station, '-'),
                 train.path and const.formatDistance(train.path.total_distance) or '-',
