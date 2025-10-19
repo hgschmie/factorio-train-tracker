@@ -8,7 +8,7 @@ local Player = require('stdlib.event.player')
 
 local const = require('lib.constants')
 
-local EntityTab = require('scripts.entity_tab')
+local EntityTab = require('scripts.entity-tab')
 local Sorting = require('scripts.sorting')
 
 ---@class tt.TabState
