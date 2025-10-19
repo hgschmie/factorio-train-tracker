@@ -1,7 +1,9 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.3
 Date: ????
-  Changes:
+  Bugfixes:
+    - fix calculation for station wait time, time was over-calculated by not updating the arrival
+      state correctly.
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.2
 Date: 2025-10-18

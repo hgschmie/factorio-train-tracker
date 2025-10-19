@@ -69,7 +69,7 @@ local function on_train_changed_state(event)
         end
     end
 
-    process_train_state()
+    train_info = process_train_state()
     update_train_info(train_info)
 end
 
