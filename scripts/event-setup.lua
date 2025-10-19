@@ -46,10 +46,23 @@ local function on_train_changed_state(event)
 
     local update_train_info = function(train_info)
         if not train_info then return end
+
+        This.TrainTracker:debugPrint(train, 'Train Info Change', function()
+            return ('New State: %s, Record time for state %s: %s'):format(
+                const.state_names[train.state],
+                train_info.last_tick_state and const.state_names[train_info.last_tick_state] or '<unknown>',
+                const.formatTime(game.tick - train_info.last_tick))
+        end)
+
         train_info.last_state = train.state
-        train_info.last_tick = event.tick
         train_info.train_name = train_name
         train_info.train_id = train.id
+
+        -- only change the last tick when the state changes
+        if train_info.last_tick_state == train.state then return end
+
+        train_info.last_tick_state = train.state
+        train_info.last_tick = event.tick
     end
 
     local process_old_state = function()

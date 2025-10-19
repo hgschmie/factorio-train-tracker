@@ -19,21 +19,23 @@ require('stdlib.utils.string')
 ---@alias tt.Freight table<string, tt.FreightItem>
 
 ---@class tt.TrainInfo
----@field last_state defines.train_state?     Last state seen for the train
----@field last_station LuaEntity?             Last stop for the train
----@field current_station LuaEntity?          Current train stop
----@field current_distance integer?           Total distance that the train will travel between two stops
----@field next_station (LuaEntity|string)?
----@field last_tick integer
----@field total_distance integer
----@field total_runtime integer
----@field total_waittime integer
----@field signal_waittime integer
----@field stop_waittime integer
----@field train_name string
----@field train_id integer
----@field current_freight tt.Freight
----@field total_freight tt.Freight
+---@field last_state defines.train_state?      Last state seen for the train. Updated continously
+---@field last_station LuaEntity?              Last observed stop
+---@field current_station LuaEntity?           Current train stop
+---@field current_distance integer?            Total distance that the train will travel between two stops
+---@field next_station (LuaEntity|string)?     Next station anticipated
+---@field last_tick integer                    Last recorded event tick
+---@field total_distance integer               Total distance stat (in ticks)
+---@field total_runtime integer                Total runtime stat (in ticks)
+---@field total_waittime integer               Total wait time stat (in ticks)
+---@field signal_waittime integer              Total signal wait time stat (in ticks)
+---@field stop_waittime integer                Total stop wait time stat (in ticks)
+---@field train_name string                    Current train name
+---@field train_id integer                     Current train id
+---@field current_freight tt.Freight           Current freight on the train
+---@field total_freight tt.Freight             Total freight moved by the train
+---@field last_tick_state defines.train_state? Train state when the last event tick was recorded. Different from last_state
+---@field current_signal LuaEntity?            Current signal where the train stops
 
 ---@class tt.Storage
 ---@field trains table<integer, tt.TrainInfo>
@@ -154,8 +156,10 @@ local function create_train_info(train)
         last_state = train and train.state,
         last_station = nil,
         current_station = train and train.station,
+        current_signal = train and train.signal,
         next_station = train and get_next_station(train),
         last_tick = game.tick,
+        last_tick_state = train and train.state,
         total_distance = 0,
         total_runtime = 0,
         total_waittime = 0,
@@ -327,11 +331,12 @@ function TrainTracker:processSignalArrival(train, event_tick)
     if not train_info then return nil end
 
     self:debugPrint(train, 'Signal Arrival', function()
-        return ('Station Name: %s'):format(const.getStationName(train_info.current_station, '<unset>'))
+        return ('Signal Position: %s'):format(train.signal and train.signal.gps_tag or '<unknown>')
     end)
 
     -- update the total runtime as the last_tick will be overwritten
     train_info.total_runtime = train_info.total_runtime + (event_tick - train_info.last_tick)
+    train_info.current_signal = train.signal
     return train_info
 end
 
@@ -344,12 +349,13 @@ function TrainTracker:processSignalDeparture(train, event_tick)
     if not train_info then return nil end
 
     self:debugPrint(train, 'Signal Departure', function()
-        return ('Station Name: %s'):format(const.getStationName(train_info.current_station, '<unset>'))
+        return ('Signal Position: %s'):format(train_info.current_signal and train_info.current_signal.gps_tag or '<unknown>')
     end)
 
     local wait_time = (event_tick - train_info.last_tick)
     train_info.total_waittime = train_info.total_waittime + wait_time
     train_info.signal_waittime = (train_info.signal_waittime or 0) + wait_time
+    train_info.current_signal = nil
 
     return train_info
 end
@@ -382,7 +388,7 @@ function TrainTracker:processStationDeparture(train, event_tick)
     -- the temp stop (which results in a wait_station -> arrive_station transition).
     -- ignore this, it will still update the travelled distance and the next transition (arrive_station -> wait_station) completes the
     -- tracker update.
-    if train.state == defines.train_state.arrive_station then return train_info end
+    if train.state == defines.train_state.arrive_station then return nil end
 
     local wait_time = (event_tick - train_info.last_tick)
     train_info.total_waittime = train_info.total_waittime + wait_time
