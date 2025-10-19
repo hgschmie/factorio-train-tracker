@@ -123,6 +123,20 @@ function Constants.formatDistance(value)
     return ('%.2fkm'):format(value / 1000)
 end
 
+---@param tick_value number?
+---@return string
+function Constants.formatTime(tick_value)
+    if tick_value == 0 then return '0s' end
+    local seconds = tick_value / 60
+    if seconds < 60 then return ('%.2fs'):format(seconds) end
+    local minutes = math.floor(seconds / 60)
+    seconds = seconds - minutes * 60
+    if minutes < 60 then return ('%02d:%05.2fs'):format(minutes, seconds) end
+    local hours = math.floor(minutes / 60)
+    minutes = minutes - hours * 60
+    return ('%02d:%02d:%05.2fs'):format(hours, minutes, seconds)
+end
+
 ---@type (fun(train_info: tt.TrainInfo, entity_type: string?, player: LuaPlayer?): string?)[]
 Constants.filter_dropdown_values = {
     function(train_info) return tostring(train_info.train_id) end,

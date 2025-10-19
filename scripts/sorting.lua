@@ -80,20 +80,6 @@ local function format_string(value)
     return value and tostring(value) or nil
 end
 
----@param tick_value number?
----@return string
-local function format_time(tick_value)
-    if tick_value == 0 then return '0s' end
-    local seconds = tick_value / 60
-    if seconds < 60 then return ('%.2fs'):format(seconds) end
-    local minutes = math.floor(seconds / 60)
-    seconds = seconds - minutes * 60
-    if minutes < 60 then return ('%02d:%05.2fs'):format(minutes, seconds) end
-    local hours = math.floor(minutes / 60)
-    minutes = minutes - hours * 60
-    return ('%02d:%02d:%05.2fs'):format(hours, minutes, seconds)
-end
-
 ---@param freight tt.Freight?
 ---@param parent LuaGuiElement
 ---@param name string
@@ -256,7 +242,7 @@ Sorting.tab_info = {
             return compare_train_id(a, b)
         end,
         formatter = function(train_info)
-            return format_time(train_info.total_runtime)
+            return const.formatTime(train_info.total_runtime)
         end,
         alignment = 'right',
     },
@@ -267,7 +253,7 @@ Sorting.tab_info = {
             return compare_train_id(a, b)
         end,
         formatter = function(train_info)
-            return format_time(train_info.stop_waittime)
+            return const.formatTime(train_info.stop_waittime)
         end,
         alignment = 'right',
     },
@@ -278,7 +264,7 @@ Sorting.tab_info = {
             return compare_train_id(a, b)
         end,
         formatter = function(train_info)
-            return format_time(train_info.signal_waittime)
+            return const.formatTime(train_info.signal_waittime)
         end,
         alignment = 'right',
     },
