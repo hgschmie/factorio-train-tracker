@@ -14,6 +14,8 @@ local const = require('lib.constants')
 
 local TICK_RATE = 31
 
+local last_change_state = 0
+
 ---@param event EventData.on_train_changed_state
 local function on_train_changed_state(event)
     local train = event and event.train
@@ -21,12 +23,16 @@ local function on_train_changed_state(event)
 
     local train_name = const.getTrainName(train)
 
+    if last_change_state == 0 then last_change_state = game.tick end
+
     if This.TrainTracker.DEBUG_TRAIN_ID then
         This.TrainTracker:debugPrint(train, 'State Change', function()
-            return ('Old State: %s, New State: %s'):format(
+            return ('Old State: %s, New State: %s, Time in state: %s'):format(
                 const.state_names[event.old_state],
-                const.state_names[train.state])
+                const.state_names[train.state],
+                const.formatTime(game.tick - last_change_state))
         end)
+        last_change_state = game.tick
         This.TrainTracker:debugPrint(train, 'State Info', function()
             return ('Station: %s, Path Length: %s, Path Travelled: %s'):format(
                 const.getStationName(train.station, '-'),
