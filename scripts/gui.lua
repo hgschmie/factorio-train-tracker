@@ -240,7 +240,7 @@ end
 
 ---@param event EventData.on_gui_selected_tab_changed
 function Gui.onTabChanged(event)
-    local gui = assert(Framework.gui_manager:find_gui(event.player_index))
+    local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
 
     local tab_index = event.element.selected_tab_index
     local tab = assert(event.element.tabs[tab_index])
@@ -276,7 +276,7 @@ end
 
 ---@param event EventData.on_gui_checked_state_changed
 function Gui.onSort(event)
-    local gui = assert(Framework.gui_manager:find_gui(event.player_index))
+    local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
 
     ---@type tt.PlayerStorage
     local player_data = assert(Player.pdata(gui.player_index))
@@ -287,7 +287,7 @@ end
 
 ---@param event EventData.on_gui_click
 function Gui.onClickEntity(event)
-    local gui = assert(Framework.gui_manager:find_gui(event.player_index))
+    local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
 
     ---@type tt.PlayerStorage
     local player_data = assert(Player.pdata(gui.player_index))
@@ -298,7 +298,7 @@ end
 
 ---@param event EventData.on_gui_click
 function Gui.onClickLastStation(event)
-    local gui = assert(Framework.gui_manager:find_gui(event.player_index))
+    local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
 
     ---@type tt.PlayerStorage
     local player_data = assert(Player.pdata(gui.player_index))
@@ -309,7 +309,7 @@ end
 
 ---@param event EventData.on_gui_click
 function Gui.onClickCurrentStation(event)
-    local gui = assert(Framework.gui_manager:find_gui(event.player_index))
+    local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
 
     ---@type tt.PlayerStorage
     local player_data = assert(Player.pdata(gui.player_index))
@@ -320,7 +320,7 @@ end
 
 ---@param event EventData.on_gui_click
 function Gui.onClickNextStation(event)
-    local gui = assert(Framework.gui_manager:find_gui(event.player_index))
+    local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
 
     ---@type tt.PlayerStorage
     local player_data = assert(Player.pdata(gui.player_index))
@@ -331,7 +331,7 @@ end
 
 ---@param event EventData.on_gui_selection_state_changed
 function Gui.onLimitChanged(event)
-    local gui = assert(Framework.gui_manager:find_gui(event.player_index))
+    local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
 
     ---@type tt.PlayerStorage
     local player_data = assert(Player.pdata(gui.player_index))
@@ -344,7 +344,7 @@ end
 
 ---@param event EventData.on_gui_selection_state_changed
 function Gui.onFilterFieldChanged(event)
-    local gui = assert(Framework.gui_manager:find_gui(event.player_index))
+    local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
 
     ---@type tt.PlayerStorage
     local player_data = assert(Player.pdata(gui.player_index))
@@ -363,7 +363,7 @@ end
 
 ---@param event EventData.on_gui_text_changed
 function Gui.onFilterTextChanged(event)
-    local gui = assert(Framework.gui_manager:find_gui(event.player_index))
+    local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
 
     ---@type tt.PlayerStorage
     local player_data = assert(Player.pdata(gui.player_index))
@@ -382,7 +382,7 @@ end
 --- @param player LuaPlayer
 function Gui.openGui(player)
     -- close an eventually open gui
-    Framework.gui_manager:destroy_gui(player.index)
+    Framework.gui_manager:destroyGuis(player.index)
 
     ---@type tt.PlayerStorage
     local player_data = assert(Player.pdata(player.index))
@@ -406,7 +406,7 @@ function Gui.openGui(player)
         pacer = 0,
     }
 
-    Framework.gui_manager:create_gui {
+    Framework.gui_manager:createGui {
         type = Gui.NAME,
         player_index = player.index,
         parent = player.gui.screen,
@@ -420,7 +420,7 @@ end
 function Gui.closeGui(player)
     ---@type tt.PlayerStorage
     local player_data = assert(Player.pdata(player.index))
-    Framework.gui_manager:destroy_gui(player.index)
+    Framework.gui_manager:destroyGuis(player.index)
 
     player_data.toggle = false
 end
@@ -504,7 +504,7 @@ end
 
 
 local function init_gui()
-    Framework.gui_manager:register_gui_type(Gui.NAME, get_gui_event_definition())
+    Framework.gui_manager:registerGuiType(Gui.NAME, get_gui_event_definition())
     Event.on_event(const.hotkey_names.toggle_display, toggle_hotkey)
 end
 
