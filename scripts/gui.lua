@@ -39,7 +39,7 @@ local Sorting = require('scripts.sorting')
 
 ---@class tt.Gui
 ---@field NAME string
----@field gui_panes table<string, tt.GuiPane>
+---@field gui_panes table<string, tt.GuiPane?>
 local Gui = {
     NAME = 'train-tracker-gui',
     gui_panes = {
@@ -75,7 +75,7 @@ end
 
 --- Returns the definition of the GUI. All events must be mapped onto constants from the gui_events array.
 ---@param gui framework.gui
----@return framework.gui.element_definition ui
+---@return framework.gui.element_definitions ui
 function Gui.getUi(gui)
     ---@type LuaPlayer, tt.PlayerStorage
     local player, player_data = Player.get(gui.player_index)
@@ -257,7 +257,7 @@ function Gui.onTabChanged(event)
     local filter_text = assert(gui:find_element('filter-text'))
     filter_text.text = tab_state.search or ''
 
-    for i=1, table_size(event.element.tabs) do
+    for i = 1, table_size(event.element.tabs) do
         if i ~= tab_index then
             local tab = assert(event.element.tabs[i])
             local entity_type = assert(tab.tab.tags.entity_type)

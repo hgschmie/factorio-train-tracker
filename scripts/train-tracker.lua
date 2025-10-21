@@ -46,7 +46,7 @@ require('stdlib.utils.string')
 ---@field DEBUG_TRAIN_ID integer?
 local TrainTracker = {
     DEBUG_MODE = Framework.settings:startup_setting('debug_mode'),
-    DEBUG_TRAIN_ID = nil, -- set a train id to debug only a single train
+    DEBUG_TRAIN_ID = 500, -- set a train id to debug only a single train
 }
 
 function TrainTracker:debugPrint(train, prefix, format_func)

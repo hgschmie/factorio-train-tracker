@@ -165,7 +165,8 @@ end
 ---@param entity_type string
 ---@return tt.GuiPane
 local function create_gui_pane(entity_type)
-    return {
+    ---@type tt.GuiPane
+    local gui_pane = {
         init = function()
             return {
                 sort = Sorting.sorting.train_id,
@@ -212,7 +213,9 @@ local function create_gui_pane(entity_type)
                     surface = loco.surface,
                 }
             else
-                player.opened = loco
+                if not (player.opened and player.opened.unit_number == loco.unit_number) then
+                    player.opened = loco
+                end
             end
         end,
         onClickLastStation = function(event, gui)
@@ -344,10 +347,9 @@ local function create_gui_pane(entity_type)
                             caption = tab_info.formatter(train_info, entity_type, train_table, name) or { const:locale('unknown') },
                             style = tags and 'tt_clickable_label' or 'label',
                             tags = tags,
-                            tooltip = tags and { const:locale('open_gui_' .. (tab_info.tooltip or column_name)) },
+                            tooltip = (tags and tab_info.tooltip) and { const:locale('open_gui_' .. tab_info.tooltip) } or nil,
                         }
                         child.style.horizontal_align = tab_info.alignment
-
                     end
                 end
 
@@ -380,6 +382,8 @@ local function create_gui_pane(entity_type)
             return true
         end,
     }
+
+    return gui_pane
 end
 
 return {

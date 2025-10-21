@@ -84,7 +84,6 @@ end
 ---@param parent LuaGuiElement
 ---@param name string
 local function freight_formatter(freight, parent, name)
-
     local child = parent.add {
         type = 'table',
         style = 'compact_slot_table',
@@ -164,7 +163,7 @@ local function tag_last_station_id(gui, train_info)
     return {
         id = train_info.train_id,
         handler = {
-            [defines.events.on_gui_click] = gui.gui_events.onClickLastStation
+            [defines.events.on_gui_click] = gui.gui_events.onClickLastStation,
         },
     }
 end
@@ -178,7 +177,7 @@ local function tag_current_station_id(gui, train_info)
     return {
         id = train_info.train_id,
         handler = {
-            [defines.events.on_gui_click] = gui.gui_events.onClickCurrentStation
+            [defines.events.on_gui_click] = gui.gui_events.onClickCurrentStation,
         },
     }
 end
@@ -192,7 +191,7 @@ local function tag_next_station_id(gui, train_info)
     return {
         id = train_info.train_id,
         handler = {
-            [defines.events.on_gui_click] = gui.gui_events.onClickNextStation
+            [defines.events.on_gui_click] = gui.gui_events.onClickNextStation,
         },
     }
 end
