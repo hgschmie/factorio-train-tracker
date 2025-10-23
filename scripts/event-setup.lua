@@ -21,22 +21,21 @@ local function on_train_changed_state(event)
     local train = event and event.train
     if not train then return end
 
-    local train_name = const.getTrainName(train)
-
-    if last_change_state == 0 then last_change_state = event.tick end
-
     -- only run for a single train ever
     if This.TrainTracker.DEBUG_TRAIN_ID then
+
         This.TrainTracker:debugPrint(train, 'Event Change', function()
+            if last_change_state == 0 then last_change = event.tick end
+
             return ('Train now %s, Time in old state %s: %s'):format(
                 const.state_names[train.state],
                 const.state_names[event.old_state],
                 const.formatTime(event.tick - last_change_state))
         end)
 
-        last_change_state = event.tick
-
         This.TrainTracker:debugPrint(train, 'Event Info', function()
+            last_change_state = event.tick
+
             if train.station then
                 return ('Station: %s, Path Length: %s, Path Travelled: %s'):format(
                     const.getStationName(train.station, '<unknown>'),
@@ -47,6 +46,8 @@ local function on_train_changed_state(event)
             end
         end)
     end
+
+    local train_name = const.getTrainName(train)
 
     local train_info = This.TrainTracker:findEntity(train)
     if not train_info then return end
@@ -204,7 +205,7 @@ local function onTick()
             if train_info then
                 local train = game.train_manager.get_train_by_id(train_info.train_id)
                 if train and train.valid then
-                    train_info.current_station = train.station
+                    if train.station then train_info.current_station = train.station end
                     train_info.last_state = train.state
                 else
                     This.TrainTracker:clearEntity(entity_type, train_info.train_id)
