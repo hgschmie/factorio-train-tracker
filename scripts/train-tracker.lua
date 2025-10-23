@@ -22,9 +22,11 @@ require('stdlib.utils.string')
 ---@field last_state defines.train_state?      Last state seen for the train. Updated continously
 ---@field last_station LuaEntity?              Last observed stop
 ---@field current_station LuaEntity?           Current train stop
+---@field current_signal LuaEntity?            Current signal where the train stops
 ---@field current_distance integer?            Total distance that the train will travel between two stops
 ---@field next_station (LuaEntity|string)?     Next station anticipated
 ---@field last_tick integer                    Last recorded event tick
+---@field last_tick_state defines.train_state? Train state when the last event tick was recorded. Different from last_state
 ---@field total_distance integer               Total distance stat (in ticks)
 ---@field total_runtime integer                Total runtime stat (in ticks)
 ---@field total_waittime integer               Total wait time stat (in ticks)
@@ -34,8 +36,6 @@ require('stdlib.utils.string')
 ---@field train_id integer                     Current train id
 ---@field current_freight tt.Freight           Current freight on the train
 ---@field total_freight tt.Freight             Total freight moved by the train
----@field last_tick_state defines.train_state? Train state when the last event tick was recorded. Different from last_state
----@field current_signal LuaEntity?            Current signal where the train stops
 
 ---@class tt.Storage
 ---@field trains table<integer, tt.TrainInfo>
@@ -49,6 +49,9 @@ local TrainTracker = {
     DEBUG_TRAIN_ID = nil, -- set a train id to debug only a single train
 }
 
+---@param train LuaTrain
+---@param prefix string
+---@param format_func fun(...: any?):string
 function TrainTracker:debugPrint(train, prefix, format_func)
     if not self.DEBUG_MODE then return end
     if TrainTracker.DEBUG_TRAIN_ID and TrainTracker.DEBUG_TRAIN_ID ~= train.id then return end
@@ -257,7 +260,6 @@ function TrainTracker:findEntity(train)
     return self:getOrCreateEntity(entity_type, train)
 end
 
-
 ---@param entity_type string
 ---@param train_id integer
 ---@param train_info tt.TrainInfo
@@ -285,24 +287,22 @@ end
 
 -- Called when the current state is defines.train_state.wait_station
 ---@param train LuaTrain
----@param event_tick integer
----@return tt.TrainInfo?
-function TrainTracker:processStationArrival(train, event_tick)
-    local train_info = self:findEntity(train)
-    if not train_info then return nil end
-
+---@param train_info tt.TrainInfo
+---@param current_interval integer
+---@return boolean
+function TrainTracker:processStationArrival(train, train_info, current_interval)
     -- arriving at a stop without station (e.g. a temp stop or a stop defined by a specific rail piece)
     -- this is what LTN uses to select the exact station to send a train to. Do not update the state, this
     -- will be immediately followed by another station arrival at the actual station.
-    if not (train.station and train.station.valid) then return train_info end
-
-    -- last tick holds the time of the last runtime update
-    train_info.total_runtime = train_info.total_runtime + (event_tick - train_info.last_tick)
-    train_info.current_station = train.station
+    if not (train.station and train.station.valid) then return false end
 
     self:debugPrint(train, 'Station Arrival', function()
-        return ('Arriving at %s'):format(const.getStationName(train_info.current_station, '<unknown>'))
+        return ('Arriving at %s'):format(const.getStationName(train.station, '<unknown>'))
     end)
+
+    -- last interval holds the time of the last runtime update
+    train_info.total_runtime = train_info.total_runtime + current_interval
+    train_info.current_station = train.station
 
     train_info.current_distance = train_info.current_distance or 0
     train_info.total_distance = train_info.total_distance + train_info.current_distance
@@ -319,67 +319,63 @@ function TrainTracker:processStationArrival(train, event_tick)
     train_info.next_station = get_next_station(train)
     train_info.current_freight = self:getFreightFromTrain(train)
 
-    return train_info
+    return true
 end
 
 -- Arriving at a signal. Just update the train_info state
 ---@param train LuaTrain
----@param event_tick integer
----@return tt.TrainInfo?
-function TrainTracker:processSignalArrival(train, event_tick)
-    local train_info = self:findEntity(train)
-    if not train_info then return nil end
-
+---@param train_info tt.TrainInfo
+---@param current_interval integer
+---@return boolean
+function TrainTracker:processSignalArrival(train, train_info, current_interval)
     self:debugPrint(train, 'Signal Arrival', function()
         return ('Arriving at %s'):format(train.signal and train.signal.gps_tag or '<unknown>')
     end)
 
-    -- update the total runtime as the last_tick will be overwritten
-    train_info.total_runtime = train_info.total_runtime + (event_tick - train_info.last_tick)
+    -- update the total runtime
+    train_info.total_runtime = train_info.total_runtime + current_interval
     train_info.current_signal = train.signal
-    return train_info
+    return true
 end
 
--- Called when the old state was wait_signal. We just left a signal
+-- Called when the old state was wait_signal. We just left a signal.
 ---@param train LuaTrain
----@param event_tick integer
----@return tt.TrainInfo?
-function TrainTracker:processSignalDeparture(train, event_tick)
-    local train_info = self:findEntity(train)
-    if not train_info then return nil end
-
+---@param train_info tt.TrainInfo
+---@param current_interval integer
+---@return boolean
+function TrainTracker:processSignalDeparture(train, train_info, current_interval)
     self:debugPrint(train, 'Signal Departure', function()
         return ('Departing from %s'):format(train_info.current_signal and train_info.current_signal.gps_tag or '<unknown>')
     end)
 
-    local wait_time = (event_tick - train_info.last_tick)
-    train_info.total_waittime = train_info.total_waittime + wait_time
-    train_info.signal_waittime = (train_info.signal_waittime or 0) + wait_time
+    -- current interval is the wait time on the signal
+    train_info.total_waittime = train_info.total_waittime + current_interval
+    train_info.signal_waittime = (train_info.signal_waittime or 0) + current_interval
     train_info.current_signal = nil
 
-    return train_info
+    return true
 end
 
--- Called when the old state was wait_station. We just left a station
+-- Called when the old state was wait_station. We just left a station.
 ---@param train LuaTrain
----@param event_tick integer
----@return tt.TrainInfo?
-function TrainTracker:processStationDeparture(train, event_tick)
-    local train_info = self:findEntity(train)
-    if not train_info then return nil end
-
-    if train.path and train.path.valid then
-        train_info.current_distance = (train_info.current_distance or 0) + train.path.total_distance
-    end
-
+---@param train_info tt.TrainInfo
+---@param current_interval integer
+---@return boolean
+function TrainTracker:processStationDeparture(train, train_info, current_interval)
     self:debugPrint(train, 'Station Departure', function()
         return ('Departing from %s'):format(const.getStationName(train_info.current_station, '<unknown>'))
     end)
 
+    if train.path and train.path.valid then
+        train_info.current_distance = (train_info.current_distance or 0) + train.path.total_distance
+    else
+        train_info.current_distance = 0
+    end
+
     self:debugPrint(train, 'Estimated Distance', function()
         return ('%s -> %s: %s'):format(
-            const.getStationName(train_info.last_station, '<unknown>'),
             const.getStationName(train_info.current_station, '<unknown>'),
+            const.getStationName(train_info.next_station, '<unknown>'),
             const.formatDistance(train_info.current_distance))
     end)
 
@@ -388,11 +384,11 @@ function TrainTracker:processStationDeparture(train, event_tick)
     -- the temp stop (which results in a wait_station -> arrive_station transition).
     -- ignore this, it will still update the travelled distance and the next transition (arrive_station -> wait_station) completes the
     -- tracker update.
-    if train.state == defines.train_state.arrive_station then return nil end
+    if train.state == defines.train_state.arrive_station then return false end
 
-    local wait_time = (event_tick - train_info.last_tick)
-    train_info.total_waittime = train_info.total_waittime + wait_time
-    train_info.stop_waittime = (train_info.stop_waittime or 0) + wait_time
+    -- current interval is the wait time at the station
+    train_info.total_waittime = train_info.total_waittime + current_interval
+    train_info.stop_waittime = (train_info.stop_waittime or 0) + current_interval
 
     train_info.last_station = train_info.current_station
     train_info.current_station = nil
@@ -416,7 +412,7 @@ function TrainTracker:processStationDeparture(train, event_tick)
     end
     train_info.current_freight = self:getFreightFromTrain(train)
 
-    return train_info
+    return true
 end
 
 ------------------------------------------------------------------------

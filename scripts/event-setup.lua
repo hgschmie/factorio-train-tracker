@@ -23,7 +23,7 @@ local function on_train_changed_state(event)
 
     local train_name = const.getTrainName(train)
 
-    if last_change_state == 0 then last_change_state = game.tick end
+    if last_change_state == 0 then last_change_state = event.tick end
 
     -- only run for a single train ever
     if This.TrainTracker.DEBUG_TRAIN_ID then
@@ -31,69 +31,89 @@ local function on_train_changed_state(event)
             return ('Train now %s, Time in old state %s: %s'):format(
                 const.state_names[train.state],
                 const.state_names[event.old_state],
-                const.formatTime(game.tick - last_change_state))
+                const.formatTime(event.tick - last_change_state))
         end)
 
-        last_change_state = game.tick
+        last_change_state = event.tick
 
         This.TrainTracker:debugPrint(train, 'Event Info', function()
-            return ('Station: %s, Path Length: %s, Path Travelled: %s'):format(
-                const.getStationName(train.station) or (train.path_end_rail and train.path_end_rail.gps_tag),
-                train.path and const.formatDistance(train.path.total_distance) or '-',
-                train.path and const.formatDistance(train.path.travelled_distance) or '-')
+            if train.station then
+                return ('Station: %s, Path Length: %s, Path Travelled: %s'):format(
+                    const.getStationName(train.station, '<unknown>'),
+                    train.path and const.formatDistance(train.path.total_distance) or '-',
+                    train.path and const.formatDistance(train.path.travelled_distance) or '-')
+            else
+                return ('Temporary Stop: %s'):format(train.path_end_rail and train.path_end_rail.gps_tag or '<unknown>')
+            end
         end)
     end
 
-    local update_train_info = function(train_info)
-        if not train_info then return end
+    local train_info = This.TrainTracker:findEntity(train)
+    if not train_info then return end
 
-        This.TrainTracker:debugPrint(train, 'Train Info Change', function()
-            return ('New State: %s, Record time for state %s: %s'):format(
-                const.state_names[train.state],
-                train_info.last_tick_state and const.state_names[train_info.last_tick_state] or '<unknown>',
-                const.formatTime(game.tick - train_info.last_tick))
-        end)
+    -- time spent in event.old_state
+    local current_interval = event.tick - train_info.last_tick
 
+    local update_train_info = function()
         train_info.last_state = train.state
         train_info.train_name = train_name
         train_info.train_id = train.id
 
         -- only change the last tick when the state changes
-        if train_info.last_tick_state == train.state then return end
+        if train_info.last_tick_state == train.state then return false end
+
+        local old_state = train_info.last_tick_state
 
         train_info.last_tick_state = train.state
         train_info.last_tick = event.tick
+
+        This.TrainTracker:debugPrint(train, 'Train Info Change', function()
+            return ('New State: %s, Record time for state %s: %s'):format(
+                const.state_names[train_info.last_tick_state],
+                old_state and const.state_names[old_state] or '<unknown>',
+                const.formatTime(current_interval))
+        end)
+
+        return true
     end
 
     local process_old_state = function()
         if event.old_state == defines.train_state.wait_station then
             -- station departure
-            return This.TrainTracker:processStationDeparture(train, event.tick)
+            return This.TrainTracker:processStationDeparture(train, train_info, current_interval)
         elseif event.old_state == defines.train_state.wait_signal then
             -- signal departure
-            return This.TrainTracker:processSignalDeparture(train, event.tick)
+            return This.TrainTracker:processSignalDeparture(train, train_info, current_interval)
         end
-        return nil
+        return false
     end
 
-    local train_info = process_old_state()
-    update_train_info(train_info)
+    if process_old_state() then
+        This.TrainTracker:debugPrint(train, 'Old State',
+            function() return 'Old State processed!' end)
+        if not update_train_info() then return end
+        current_interval = event.tick - train_info.last_tick
+    end
 
     local process_train_state = function()
         if train.state == defines.train_state.wait_station then
             -- station arrival. Housekeep all the run information
-            return This.TrainTracker:processStationArrival(train, event.tick)
+            return This.TrainTracker:processStationArrival(train, train_info, current_interval)
         elseif train.state == defines.train_state.wait_signal then
             -- signal arrival
-            return This.TrainTracker:processSignalArrival(train, event.tick)
+            return This.TrainTracker:processSignalArrival(train, train_info, current_interval)
         else
-            return nil
+            return false
         end
     end
 
-    train_info = process_train_state()
-    update_train_info(train_info)
-end
+    if process_train_state() then
+        This.TrainTracker:debugPrint(train, 'Train State',
+            function() return 'Train State processed!' end)
+
+        if not update_train_info() then return end
+    end
+ end
 
 ---@param event EventData.on_train_created
 local function on_train_created(event)
