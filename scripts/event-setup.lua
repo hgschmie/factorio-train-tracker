@@ -184,18 +184,29 @@ end
 -- Event ticker
 --------------------------------------------------------------------------------
 
-local function next_entity()
-    storage.ticker.entity_type = next(const.entity_types, storage.ticker.entity_type) or next(const.entity_types)
-    return storage.ticker.entity_type
+---@return tt.Ticker
+local function get_ticker()
+    storage.ticker = storage.ticker or {}
+    return storage.ticker
+end
+
+---@param ticker tt.Ticker
+---@return string next entity type to process
+local function next_entity(ticker)
+    ticker.entity_type = next(const.entity_types, ticker.entity_type) or next(const.entity_types)
+    return ticker.entity_type
 end
 
 local function onTick()
-    storage.ticker = storage.ticker or {}
+    local ticker = get_ticker()
 
-    local entity_type = storage.ticker.entity_type or next_entity()
+    local entity_type = ticker.entity_type or next_entity(ticker)
     local entities = This.TrainTracker:entities(entity_type)
     local process_count = math.ceil((table_size(entities) * TICK_RATE) / 60)
-    local index = storage.ticker.last_tick_index
+    local index = ticker.last_tick_index
+
+    -- if the train that the index points to has been removed in the meantime, reset the index
+    if index and not entities[index] then index = nil end
 
     if process_count > 0 then
         ---@type tt.TrainInfo
@@ -217,8 +228,8 @@ local function onTick()
         index = nil
     end
 
-    if not index then next_entity() end
-    storage.ticker.last_tick_index = index
+    if not index then next_entity(ticker) end
+    ticker.last_tick_index = index
 end
 
 --------------------------------------------------------------------------------

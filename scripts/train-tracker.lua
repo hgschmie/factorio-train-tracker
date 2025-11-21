@@ -41,6 +41,11 @@ require('stdlib.utils.string')
 ---@class tt.Storage
 ---@field trains table<integer, tt.TrainInfo>
 ---@field ships table<integer, tt.TrainInfo>
+---@field ticker tt.Ticker
+
+---@class tt.Ticker
+---@field entity_type string?
+---@field last_tick_index integer?
 
 ---@class tt.TrainTracker
 ---@field DEBUG_MODE boolean
@@ -211,6 +216,7 @@ function TrainTracker:init()
         storage.tt_data = {
             trains = {},
             ships = {},
+            ticker = {},
         }
     end
 end

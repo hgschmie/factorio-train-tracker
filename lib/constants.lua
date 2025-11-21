@@ -72,11 +72,13 @@ end
 -- other constants
 --------------------------------------------------------------------------------
 
+---@type table<string, string>
 Constants.entity_types = {
     trains = 'trains',
     ships = 'ships',
 }
 
+---@type table<string, boolean>
 Constants.ship_names = {
     -- cargo-ships mod
     ['boat_engine'] = true,
