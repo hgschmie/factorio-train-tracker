@@ -370,6 +370,67 @@ function TrainTracker:registerBlacklist(blacklist_func)
 end
 
 ------------------------------------------------------------------------
+-- station arrival and departure processing
+------------------------------------------------------------------------
+
+--- Updates the train state for a station arrival
+---@param train LuaTrain
+---@param train_info tt.TrainInfo
+---@param current_interval integer
+function TrainTracker:arrivalUpdate(train, train_info, current_interval)
+    -- last interval holds the time of the last runtime update
+    train_info.total_runtime = train_info.total_runtime + current_interval
+
+    train_info.current_distance = train_info.current_distance or 0
+    train_info.total_distance = train_info.total_distance + train_info.current_distance
+
+    self:debugPrint(train, 'Distance Added', function()
+        return ('%s -> %s: %s (total: %s)'):format(
+            const.getStationName(train_info.last_station, '<unknown>'),
+            const.getStationName(train_info.current_station, '<unknown>'),
+            const.formatDistance(train_info.current_distance),
+            const.formatDistance(train_info.total_distance))
+    end)
+
+    train_info.current_distance = 0
+    train_info.next_station = self:getNextStation(train)
+end
+
+--- Updates the train state for a departure
+---@param train LuaTrain
+---@param train_info tt.TrainInfo
+---@param current_interval integer
+---@return boolean
+function TrainTracker:departureUpdate(train, train_info, current_interval)
+    -- if the train has a valid path, set the distance for the current travel
+    train_info.current_distance = (train_info.current_distance or 0) + train.path and train.path.valid and train.path.total_distance or 0
+
+    -- this happens when the train arrives at a temp stop first (like the one set up by LTN). In this case,
+    -- the train arrives (arrive_station -> wait_station transition) without a valid station; then the schedule updates by removing
+    -- the temp stop (which results in a wait_station -> arrive_station transition).
+    -- ignore this, it will still update the travelled distance and the next transition (arrive_station -> wait_station) completes the
+    -- tracker update.
+    if train_info.current_is_temporary then return false end
+
+    self:debugPrint(train, 'Estimated Distance', function()
+        return ('%s -> %s: %s'):format(
+            const.getStationName(train_info.current_station, '<unknown>'),
+            const.getStationName(train_info.next_station, '<unknown>'),
+            const.formatDistance(train_info.current_distance))
+    end)
+
+    -- current interval is the wait time at the station
+    train_info.total_waittime = train_info.total_waittime + current_interval
+    train_info.stop_waittime = (train_info.stop_waittime or 0) + current_interval
+
+    train_info.last_station = train_info.current_station
+    train_info.current_station = nil
+    train_info.current_is_temporary = false
+
+    return true
+end
+
+------------------------------------------------------------------------
 -- event callbacks
 ------------------------------------------------------------------------
 
@@ -397,22 +458,8 @@ function TrainTracker:processStationArrival(train, train_info, current_interval)
         return ('Arriving at %s'):format(const.getStationName(train_info.current_station, '<unknown>'))
     end)
 
-    -- last interval holds the time of the last runtime update
-    train_info.total_runtime = train_info.total_runtime + current_interval
+    self:arrivalUpdate(train, train_info, current_interval)
 
-    train_info.current_distance = train_info.current_distance or 0
-    train_info.total_distance = train_info.total_distance + train_info.current_distance
-
-    self:debugPrint(train, 'Distance Added', function()
-        return ('%s -> %s: %s (total: %s)'):format(
-            const.getStationName(train_info.last_station, '<unknown>'),
-            const.getStationName(train_info.current_station, '<unknown>'),
-            const.formatDistance(train_info.current_distance),
-            const.formatDistance(train_info.total_distance))
-    end)
-
-    train_info.current_distance = 0
-    train_info.next_station = get_next_station(train)
     train_info.current_freight = self:getFreightFromTrain(train)
 
     return true
@@ -464,34 +511,10 @@ function TrainTracker:processStationDeparture(train, train_info, current_interva
         end)
     end
 
-    if train.path and train.path.valid then
-        train_info.current_distance = (train_info.current_distance or 0) + train.path.total_distance
-    else
-        train_info.current_distance = 0
-    end
+    if not self:departureUpdate(train, train_info, current_interval) then return false end
 
-    -- this happens when the train arrives at a temp stop first (like the one set up by LTN). In this case,
-    -- the train arrives (arrive_station -> wait_station transition) without a valid station; then the schedule updates by removing
-    -- the temp stop (which results in a wait_station -> arrive_station transition).
-    -- ignore this, it will still update the travelled distance and the next transition (arrive_station -> wait_station) completes the
-    -- tracker update.
-    if train_info.current_is_temporary then return false end
-
-    self:debugPrint(train, 'Estimated Distance', function()
-        return ('%s -> %s: %s'):format(
-            const.getStationName(train_info.current_station, '<unknown>'),
-            const.getStationName(train_info.next_station, '<unknown>'),
-            const.formatDistance(train_info.current_distance))
-    end)
-
-    -- current interval is the wait time at the station
-    train_info.total_waittime = train_info.total_waittime + current_interval
-    train_info.stop_waittime = (train_info.stop_waittime or 0) + current_interval
-
-    train_info.last_station = train_info.current_station
-    train_info.current_station = nil
-    train_info.current_is_temporary = false
-    train_info.next_station = get_next_station(train)
+    -- determine next stop
+    train_info.next_station = self:getNextStation(train)
 
     local old_freight = train_info.current_freight
     if old_freight and table_size(old_freight) > 0 then
