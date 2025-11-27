@@ -50,9 +50,17 @@ require('stdlib.utils.string')
 ---@class tt.TrainTracker
 ---@field DEBUG_MODE boolean
 ---@field DEBUG_TRAIN_ID integer?
+---@field blacklist_function fun(train: LuaTrain): boolean
 local TrainTracker = {
     DEBUG_MODE = Framework.settings:startup_setting('debug_mode'),
     DEBUG_TRAIN_ID = nil, -- set a train id to debug only a single train
+
+    blacklist_function = function(train)
+        -- blacklist any train without a locomotive
+        local loco = const.getMainLocomotive(train)
+        if not loco then return true end
+        return false
+    end
 }
 
 ---@param train LuaTrain
@@ -260,17 +268,25 @@ end
 
 ---@param entity_type string
 ---@param train LuaTrain
----@return tt.TrainInfo train_info Train information
+---@return tt.TrainInfo? train_info Train information
 function TrainTracker:getOrCreateEntity(entity_type, train)
     assert(entity_type)
+    if not (train and train.valid) then return nil end
+
     local entities = self:entities(entity_type)
-    if not entities[train.id] then entities[train.id] = create_train_info(train) end
+    if entities[train.id] then return entities[train.id] end
+
+    if self.blacklist_function(train) then return nil end
+
+    entities[train.id] = create_train_info(train)
     return entities[train.id]
 end
 
 ---@param train LuaTrain
 ---@return tt.TrainInfo? train_info Train information
 function TrainTracker:findEntity(train)
+    if not (train and train.valid) then return nil end
+
     local entity_type = self:determineEntityType(train)
     if not entity_type then return nil end -- trains without engines are ignored
 
@@ -295,6 +311,55 @@ end
 function TrainTracker:destroyEntity(train_id)
     for _, entity_type in pairs(const.entity_types) do
         self:entities(entity_type)[train_id] = nil
+    end
+end
+
+------------------------------------------------------------------------
+-- train renaming
+------------------------------------------------------------------------
+
+local LOCK_TIMEOUT = 600 -- 10 seconds to teleport from A to B
+
+---@param train LuaTrain
+---@param old_train_id number
+---@return tt.TrainInfo? Train info for the old train if it exists.
+function TrainTracker:startRename(train, old_train_id)
+    local entity_type = self:determineEntityType(train)
+    local train_info = self:getEntity(entity_type, old_train_id)
+    if train_info then train_info.lock_time = game.tick + LOCK_TIMEOUT end
+
+    return train_info
+end
+
+---@param train LuaTrain
+---@param old_train_id number
+---@return tt.TrainInfo? train_info Train info for the new train if it exists
+function TrainTracker:endRename(train, old_train_id)
+    local entity_type = self:determineEntityType(train)
+    local train_info = self:getEntity(entity_type, old_train_id)
+    if not train_info then return nil end
+
+    -- unlock
+    train_info.lock_time = nil
+
+    -- finish rename
+    train_info.train_id = train.id
+    self:setEntity(entity_type, train.id, train_info)
+    self:clearEntity(entity_type, old_train_id)
+
+    return train_info
+end
+
+------------------------------------------------------------------------
+-- blacklist management
+------------------------------------------------------------------------
+
+---@param blacklist_func fun(train: LuaTrain?): boolean
+function TrainTracker:registerBlacklist(blacklist_func)
+    local next_function = self.blacklist_function
+    self.blacklist_function = function(train)
+        if blacklist_func(train) then return true end
+        return next_function(train)
     end
 end
 
