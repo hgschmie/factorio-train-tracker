@@ -97,15 +97,20 @@ local function on_train_changed_state(event)
     end
 
     local process_train_state = function()
-        if train.state == defines.train_state.wait_station then
+        if train.state == defines.train_state.on_the_path then
+            -- if train was in an invalid state (e.g. no_path), recompute path length
+            if train_info.current_distance == 0
+                and (train.path and train.path.valid) then
+                train_info.current_distance = (train_info.current_distance or 0) + train.path.total_distance
+            end
+        elseif train.state == defines.train_state.wait_station then
             -- station arrival. Housekeep all the run information
             return This.TrainTracker:processStationArrival(train, train_info, current_interval)
         elseif train.state == defines.train_state.wait_signal then
             -- signal arrival
             return This.TrainTracker:processSignalArrival(train, train_info, current_interval)
-        else
-            return false
         end
+        return false
     end
 
     if process_train_state() then

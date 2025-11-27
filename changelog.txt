@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
-Version: 1.0.4
+Version: 1.1.0
 Date: ????
+  Changes:
+    - update distance when train comes out of an invalid state (e.g. no path or no schedule)
   Bugfixes:
     - Fix a crash in the background ticker when a train gets deleted
 ---------------------------------------------------------------------------------------------------
