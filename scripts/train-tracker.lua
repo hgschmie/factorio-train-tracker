@@ -37,6 +37,7 @@ require('stdlib.utils.string')
 ---@field train_id integer                     Current train id
 ---@field current_freight tt.Freight           Current freight on the train
 ---@field total_freight tt.Freight             Total freight moved by the train
+---@field lock_time integer?                   Lock timestamp to protect from deletion (needed for teleport)
 
 ---@class tt.Storage
 ---@field trains table<integer, tt.TrainInfo>
@@ -197,6 +198,7 @@ local function create_train_info(train)
         train_id = train.id,
         current_freight = {},
         total_freight = {},
+        lock_time = nil,
     }
 
     return train_info
@@ -302,15 +304,19 @@ end
 
 ---@param entity_type string
 ---@param train_id integer?
+---@return boolean True if delete was successful
 function TrainTracker:clearEntity(entity_type, train_id)
-    if not train_id then return end
+    if not train_id then return false end
+    local train_info = self:entities(entity_type)[train_id]
+    if train_info and train_info.lock_time and train_info.lock_time > game.tick then return false end
     self:entities(entity_type)[train_id] = nil
+    return true
 end
 
 ---@param train_id integer
 function TrainTracker:destroyEntity(train_id)
     for _, entity_type in pairs(const.entity_types) do
-        self:entities(entity_type)[train_id] = nil
+        if self:clearEntity(entity_type, train_id) then return end
     end
 end
 
