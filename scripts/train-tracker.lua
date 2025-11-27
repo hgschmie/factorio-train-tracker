@@ -228,8 +228,7 @@ function TrainTracker:resync()
 
     for _, train in pairs(trains) do
         local entity_type = self:determineEntityType(train)
-        if entity_type then
-            self:getOrCreateEntity(entity_type, train)
+        if entity_type and self:getOrCreateEntity(entity_type, train) then
             known_entities[train.id] = entity_type
         end
     end
@@ -439,6 +438,7 @@ function TrainTracker:processStationDeparture(train, train_info, current_interva
             end
         end
     end
+
     train_info.current_freight = self:getFreightFromTrain(train)
 
     return true

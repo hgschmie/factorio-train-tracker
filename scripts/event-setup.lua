@@ -23,7 +23,6 @@ local function on_train_changed_state(event)
 
     -- only run for a single train ever
     if This.TrainTracker.DEBUG_TRAIN_ID then
-
         This.TrainTracker:debugPrint(train, 'Event Change', function()
             if last_change_state == 0 then last_change = event.tick end
 
@@ -90,8 +89,7 @@ local function on_train_changed_state(event)
     end
 
     if process_old_state() then
-        This.TrainTracker:debugPrint(train, 'Old State',
-            function() return 'Old State processed!' end)
+        This.TrainTracker:debugPrint(train, 'Old State', function() return 'Old State processed!' end)
         if not update_train_info() then return end
         current_interval = event.tick - train_info.last_tick
     end
@@ -114,12 +112,11 @@ local function on_train_changed_state(event)
     end
 
     if process_train_state() then
-        This.TrainTracker:debugPrint(train, 'Train State',
-            function() return 'Train State processed!' end)
+        This.TrainTracker:debugPrint(train, 'Train State', function() return 'Train State processed!' end)
 
         if not update_train_info() then return end
     end
- end
+end
 
 ---@param event EventData.on_train_created
 local function on_train_created(event)
