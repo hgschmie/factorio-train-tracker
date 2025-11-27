@@ -95,7 +95,7 @@ end
 
 ---@param train LuaTrain
 ---@return (string|LuaEntity)? station
-local function get_next_station(train)
+function TrainTracker:getNextStation(train)
     if not train.schedule then return nil end
 
     ---@type ScheduleRecord[]
@@ -177,7 +177,7 @@ local function create_train_info(train)
         current_station = train and train.station,
         current_signal = train and train.signal,
         current_is_temporary = train and stop_is_temporary(train) or false,
-        next_station = train and get_next_station(train),
+        next_station = train and TrainTracker:getNextStation(train),
         last_tick = game.tick,
         last_tick_state = train and train.state,
         total_distance = 0,
