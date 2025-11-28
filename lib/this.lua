@@ -8,7 +8,9 @@
 ---@field Console tt.Console?
 ---@field Gui tt.Gui?
 local This = {
-    other_mods = {},
+    other_mods = {
+        ['space-exploration'] = 'space-exploration',
+    },
 }
 
 if (script) then

@@ -5,6 +5,8 @@ Date: ????
     - update distance when train comes out of an invalid state (e.g. no path or no schedule)
   Bugfixes:
     - Fix a crash in the background ticker when a train gets deleted
+  Features:
+    - Add support for Space Exploration (Space Elevator) tracking
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.3
 Date: 2025-10-22
