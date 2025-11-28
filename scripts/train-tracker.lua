@@ -329,7 +329,7 @@ local LOCK_TIMEOUT = 600 -- 10 seconds to teleport from A to B
 ---@param train LuaTrain
 ---@param old_train_id number
 ---@return tt.TrainInfo? Train info for the old train if it exists.
-function TrainTracker:startRename(train, old_train_id)
+function TrainTracker:beginClone(train, old_train_id)
     local entity_type = self:determineEntityType(train)
     local train_info = self:getEntity(entity_type, old_train_id)
     if train_info then train_info.lock_time = game.tick + LOCK_TIMEOUT end
@@ -340,7 +340,7 @@ end
 ---@param train LuaTrain
 ---@param old_train_id number
 ---@return tt.TrainInfo? train_info Train info for the new train if it exists
-function TrainTracker:endRename(train, old_train_id)
+function TrainTracker:commitClone(train, old_train_id)
     local entity_type = self:determineEntityType(train)
     local train_info = self:getEntity(entity_type, old_train_id)
     if not train_info then return nil end
@@ -403,7 +403,7 @@ end
 ---@return boolean
 function TrainTracker:departureUpdate(train, train_info, current_interval)
     -- if the train has a valid path, set the distance for the current travel
-    train_info.current_distance = (train_info.current_distance or 0) + train.path and train.path.valid and train.path.total_distance or 0
+    train_info.current_distance = (train_info.current_distance or 0) + (train.path and train.path.valid and train.path.total_distance or 0)
 
     -- this happens when the train arrives at a temp stop first (like the one set up by LTN). In this case,
     -- the train arrives (arrive_station -> wait_station transition) without a valid station; then the schedule updates by removing

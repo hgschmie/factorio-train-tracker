@@ -26,7 +26,7 @@ local SpaceExploration = {}
 ---@param event SETeleportStartedEvent
 local function se_teleport_started(event)
     local train = event.train
-    local train_info = This.TrainTracker:startRename(train, event.old_train_id_1, false)
+    local train_info = This.TrainTracker:beginClone(train, event.old_train_id_1, false)
     if train_info then
         -- reached the space elevator station
         train_info.current_station = train_info.next_station
@@ -43,7 +43,7 @@ end
 ---@param event SETeleportFinishedEvent
 local function se_teleport_finished(event)
     local train = event.train
-    local train_info = This.TrainTracker:endRename(train, event.old_train_id_1, true)
+    local train_info = This.TrainTracker:commitClone(train, event.old_train_id_1, true)
     if not train_info then return end
 
     -- update the train state

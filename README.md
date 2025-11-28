@@ -40,13 +40,13 @@ All the support is in [the space exploration module](https://github.com/hgschmie
 
 When the Space Elevator moves a train from the planet into orbit (or back), it fires the `space-exploration:on_train_teleport_started` event. When this happens,
 
-- the existing train info for the old train is marked as "will be renamed". That locks down the internal statistics so that removing the old train will not delete it (otherwise, when a train gets deleted, it removes all its internal statistics)
+- the existing train info for the old train is marked as "will be cloned". That locks down the internal statistics so that removing the old train will not delete it (otherwise, when a train gets deleted, it removes all its internal statistics)
 - updates the "current_station" field as the train has reached the space elevator
 - processes the internal "arrivalUpdate" so that all the statistics are correct
 
 When the train has been successfully moved, Space Exploration fires the `space-exploration:on_train_teleport_finished` event. Now train tracker will
 
-- finish the actual renaming by unlocking the statistics for the old train and assigning them to the new train
+- finish the actual cloning by unlocking the statistics for the old train and assigning them to the new train
 - mark the current stop as not temporary (the current stop is now the other end of the space elevator) in the train tracker statistics. This is necessary to ensure that the departure update is actually applied.
 - finally update the internal statistics as if the train were leaving a regular stop.
 
