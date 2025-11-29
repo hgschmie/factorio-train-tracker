@@ -37,6 +37,8 @@ require('stdlib.utils.string')
 ---@field train_id integer                     Current train id
 ---@field current_freight tt.Freight           Current freight on the train
 ---@field total_freight tt.Freight             Total freight moved by the train
+---@field total_stop_count integer?            Number of times stopped at train stop
+---@field total_signal_count integer?          Number of times stopped at a signal
 ---@field lock_time integer?                   Lock timestamp to protect from deletion (needed for teleport)
 
 ---@class tt.Storage
@@ -198,6 +200,8 @@ local function create_train_info(train)
         train_id = train.id,
         current_freight = {},
         total_freight = {},
+        total_stop_count = 0,
+        total_signal_count = 0,
         lock_time = nil,
     }
 
@@ -400,7 +404,7 @@ end
 ---@param train LuaTrain
 ---@param train_info tt.TrainInfo
 ---@param current_interval integer
----@return boolean
+---@return boolean left_stop True if the stop was a not a temporary stop
 function TrainTracker:departureUpdate(train, train_info, current_interval)
     -- if the train has a valid path, set the distance for the current travel
     train_info.current_distance = (train_info.current_distance or 0) + (train.path and train.path.valid and train.path.total_distance or 0)
@@ -494,6 +498,7 @@ function TrainTracker:processSignalDeparture(train, train_info, current_interval
     -- current interval is the wait time on the signal
     train_info.total_waittime = train_info.total_waittime + current_interval
     train_info.signal_waittime = (train_info.signal_waittime or 0) + current_interval
+    train_info.total_signal_count = (train_info.total_signal_count or 0) + 1
     train_info.current_signal = nil
 
     return true
@@ -512,6 +517,9 @@ function TrainTracker:processStationDeparture(train, train_info, current_interva
     end
 
     if not self:departureUpdate(train, train_info, current_interval) then return false end
+
+    -- left a real (not temp) stop
+    train_info.total_stop_count = (train_info.total_stop_count or 0) + 1
 
     -- determine next stop
     train_info.next_station = self:getNextStation(train)

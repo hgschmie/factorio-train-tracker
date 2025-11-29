@@ -81,8 +81,10 @@ local tab_columns = {
         Sorting.sorting.train_name,
         Sorting.sorting.total_distance,
         Sorting.sorting.total_runtime,
-        Sorting.sorting.signal_waittime,
         Sorting.sorting.stop_waittime,
+        Sorting.sorting.signal_waittime,
+        Sorting.sorting.stop_count,
+        Sorting.sorting.signal_count,
     },
     station = {
         Sorting.sorting.train_id,

@@ -30,7 +30,9 @@ local Sorting = {
         'next_station',
         'state',
         'current_freight',
-        'total_freight'
+        'total_freight',
+        'stop_count',
+        'signal_count',
     },
     sorting = {},
 }
@@ -356,6 +358,24 @@ Sorting.tab_info = {
         end,
         alignment = 'left',
         raw = true,
+    },
+    [Sorting.sorting.stop_count] = {
+        comparator = function(a, b)
+            return math.sign((a.total_stop_count or 0) - (b.total_stop_count or 0))
+        end,
+        formatter = function(train_info)
+            return format_string(train_info.total_stop_count or 0)
+        end,
+        alignment = 'right',
+    },
+    [Sorting.sorting.signal_count] = {
+        comparator = function(a, b)
+            return math.sign((a.total_signal_count or 0) - (b.total_signal_count or 0))
+        end,
+        formatter = function(train_info)
+            return format_string(train_info.total_signal_count or 0)
+        end,
+        alignment = 'right',
     },
 }
 
