@@ -2,6 +2,7 @@
 Version: 1.1.1
 Date: ????
   Changes:
+    - update train names faster when renaming trains
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.0
 Date: 2025-11-29

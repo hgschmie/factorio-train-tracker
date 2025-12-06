@@ -46,8 +46,6 @@ local function on_train_changed_state(event)
         end)
     end
 
-    local train_name = const.getTrainName(train)
-
     local train_info = This.TrainTracker:findEntity(train)
     if not train_info then return end
 
@@ -56,7 +54,7 @@ local function on_train_changed_state(event)
 
     local update_train_info = function()
         train_info.last_state = train.state
-        train_info.train_name = train_name
+        train_info.train_name = const.getTrainName(train)
         train_info.train_id = train.id
 
         -- only change the last tick when the state changes
@@ -218,6 +216,7 @@ local function onTick()
             if train_info then
                 local train = game.train_manager.get_train_by_id(train_info.train_id)
                 if train and train.valid then
+                    train_info.train_name = const.getTrainName(train)
                     if train.station then train_info.current_station = train.station end
                     train_info.last_state = train.state
                 else
