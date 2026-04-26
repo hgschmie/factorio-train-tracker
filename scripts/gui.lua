@@ -254,7 +254,7 @@ function Gui.onTabChanged(event)
     local tab_state = assert(player_data.tab_state[entity_type])
     tab_state.tab_index = tab_index
 
-    local filter_text = assert(gui:find_element('filter-text'))
+    local filter_text = assert(gui:findElement('filter-text'))
     filter_text.text = tab_state.search or ''
 
     for i = 1, table_size(event.element.tabs) do
@@ -264,7 +264,7 @@ function Gui.onTabChanged(event)
             local tab_name = assert(tab.tab.tags.tab_name)
             local tab_prefix = entity_type .. '_' .. tab_name
             local entity_table = tab_prefix .. '_table'
-            local element = assert(gui:find_element(entity_table))
+            local element = assert(gui:findElement(entity_table))
             element.clear()
         end
     end
@@ -357,7 +357,7 @@ function Gui.onFilterFieldChanged(event)
     tab_state.filter = event.element.selected_index --[[@as tt.filter_dropdown ]]
     tab_state.search = ''
 
-    local filter_text = assert(gui:find_element('filter-text'))
+    local filter_text = assert(gui:findElement('filter-text'))
     filter_text.text = tab_state.search
 
     gui.context.pacer = 0 -- force refresh
@@ -444,13 +444,13 @@ function Gui.guiUpdater(gui)
 
     -- update shared fields
 
-    local limit = assert(gui:find_element('limit'))
+    local limit = assert(gui:findElement('limit'))
     limit.selected_index = tab_state.limit or const.limit_dropdown.all
 
-    local filter_field = assert(gui:find_element('filter-field'))
+    local filter_field = assert(gui:findElement('filter-field'))
     filter_field.selected_index = tab_state.filter or const.filter_dropdown.id
 
-    local filter_text = assert(gui:find_element('filter-text'))
+    local filter_text = assert(gui:findElement('filter-text'))
     if filter_text.text ~= tab_state.search then
         filter_text.text = tab_state.search
     end
@@ -460,7 +460,7 @@ function Gui.guiUpdater(gui)
     tab_state.tab_index = tab_state.tab_index or 1
 
     ---@type LuaGuiElement
-    local main_tab = assert(gui:find_element('main_tab'))
+    local main_tab = assert(gui:findElement('main_tab'))
     if not main_tab.selected_tab_index then
         main_tab.selected_tab_index = tab_state.tab_index
     end

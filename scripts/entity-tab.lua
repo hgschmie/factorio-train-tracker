@@ -286,7 +286,7 @@ local function create_gui_pane(entity_type)
         refreshGuiPane = function(gui, tab_name)
             local entity_table = (('%s_%s'):format(entity_type, tab_name)) .. '_table'
 
-            local train_table = assert(gui:find_element(entity_table))
+            local train_table = assert(gui:findElement(entity_table))
             if not train_table then return false end
 
             ---@type LuaPlayer, tt.PlayerStorage
@@ -335,7 +335,7 @@ local function create_gui_pane(entity_type)
                     local field_name = ('%s-%s'):format(tab_prefix, column_name)
                     local tab_info = assert(Sorting.tab_info[column_name])
 
-                    local name = gui:generate_gui_name(('%s-%d'):format(field_name, train_info.train_id))
+                    local name = gui:generateGuiName(('%s-%d'):format(field_name, train_info.train_id))
 
                     if tab_info.raw or false then
                         tab_info.formatter(train_info, entity_type, train_table, name)
@@ -370,7 +370,7 @@ local function create_gui_pane(entity_type)
             local player_data = assert(Player.pdata(gui.player_index))
             local tab_state = player_data.tab_state[entity_type]
 
-            local train_table = assert(gui:find_element(entity_table))
+            local train_table = assert(gui:findElement(entity_table))
             if table_size(train_table.children) >= train_table.column_count then
                 for i = 1, train_table.column_count do
                     local checkbox = train_table.children[i]
