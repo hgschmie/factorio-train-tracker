@@ -272,6 +272,8 @@ function Gui.onTabChanged(event)
     ---@type tt.GuiContext
     local context = gui.context
     context.pacer = 0
+
+    Gui.guiUpdater(gui)
 end
 
 ---@param event EventData.on_gui_checked_state_changed
@@ -381,8 +383,6 @@ end
 
 --- @param player LuaPlayer
 function Gui.openGui(player)
-    -- close an eventually open gui
-    Framework.gui_manager:destroyGuis(player.index)
 
     ---@type tt.PlayerStorage
     local player_data = assert(Player.pdata(player.index))
@@ -420,7 +420,7 @@ end
 function Gui.closeGui(player)
     ---@type tt.PlayerStorage
     local player_data = assert(Player.pdata(player.index))
-    Framework.gui_manager:destroyGuis(player.index)
+    Framework.gui_manager:destroyGui(player.index, Gui.NAME)
 
     player_data.toggle = false
 end
