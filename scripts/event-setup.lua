@@ -24,7 +24,7 @@ local function on_train_changed_state(event)
     -- only run for a single train ever
     if This.TrainTracker.DEBUG_TRAIN_ID then
         This.TrainTracker:debugPrint(train, 'Event Change', function()
-            if last_change_state == 0 then last_change = event.tick end
+            if last_change_state == 0 then last_change_state = event.tick end
 
             return ('Train now %s, Time in old state %s: %s'):format(
                 const.state_names[train.state],
@@ -186,8 +186,11 @@ end
 
 ---@return tt.Ticker
 local function get_ticker()
-    storage.ticker = storage.ticker or {}
-    return storage.ticker
+    ---@type tt.Storage
+    local tt_data = storage.tt_data
+
+    tt_data.ticker = tt_data.ticker or {}
+    return tt_data.ticker
 end
 
 ---@param ticker tt.Ticker

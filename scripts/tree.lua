@@ -73,7 +73,7 @@ end
 function Tree_MT:traverse(callback, limit)
     assert(callback)
     limit = limit or -1
-    return Tree_MT:traverse_tree(self.root, callback, limit)
+    return self:traverse_tree(self.root, callback, limit)
 end
 
 ---@param node TreeNode
