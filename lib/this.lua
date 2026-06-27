@@ -8,7 +8,7 @@
 ---@field Console tt.Console?
 ---@field Gui tt.Gui?
 local This = {
-    other_mods = {
+    remote_apis = {
         ['space-exploration'] = 'space-exploration',
     },
 }
