@@ -2,8 +2,7 @@
 -- Space Exploration
 --------------------------------------------------------------------------------
 
-local SpaceExploration = {}
---------------------------------------------------------------------------------
+local Event = require('stdlib.event.event')
 
 ---@class SETeleportStartedEvent
 ---@field train LuaTrain
@@ -60,25 +59,21 @@ local function blacklist_se_tug(train)
     return false
 end
 
-SpaceExploration.runtime = function()
-    assert(script)
+local function se_init()
+    if not remote.interfaces['space-exploration'] then return end
 
-    local Event = require('stdlib.event.event')
+    assert(remote.interfaces['space-exploration']['get_on_train_teleport_started_event'], 'LTN present but no on_delivery_failed event')
+    assert(remote.interfaces['space-exploration']['get_on_train_teleport_finished_event'], 'LTN present but no on_delivery_failed event')
 
-    local se_init = function()
-        if not remote.interfaces['space-exploration'] then return end
-
-        assert(remote.interfaces['space-exploration']['get_on_train_teleport_started_event'], 'LTN present but no on_delivery_failed event')
-        assert(remote.interfaces['space-exploration']['get_on_train_teleport_finished_event'], 'LTN present but no on_delivery_failed event')
-
-        Event.on_event(remote.call('space-exploration', 'get_on_train_teleport_started_event'), se_teleport_started)
-        Event.on_event(remote.call('space-exploration', 'get_on_train_teleport_finished_event'), se_teleport_finished)
-    end
-
-    Event.on_init(se_init)
-    Event.on_load(se_init)
+    Event.on_event(remote.call('space-exploration', 'get_on_train_teleport_started_event'), se_teleport_started)
+    Event.on_event(remote.call('space-exploration', 'get_on_train_teleport_finished_event'), se_teleport_finished)
 
     This.TrainTracker:registerBlacklist(blacklist_se_tug)
 end
+
+local SpaceExploration = {
+    on_init = se_init,
+    on_load = se_init,
+}
 
 return SpaceExploration
