@@ -292,9 +292,10 @@ function Math.sign(x)
 end
 
 -- compute 1-based modulo.
----@param x number
----@param y number
----@return number
+---@generic T : number
+---@param x T
+---@param y integer
+---@return T
 function Math.one_mod(x, y)
     return ((x - 1) % y) + 1
 end

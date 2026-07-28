@@ -34,7 +34,7 @@ function Rendering:renderText(player_index, render_text)
 end
 
 local function onSelectedEntityChanged(event)
-    Framework.render:clearRenderedText(event.player_index)
+    Rendering:clearRenderedText(event.player_index)
 end
 
 --------------------------------------------------------------------------------

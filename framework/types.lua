@@ -14,9 +14,9 @@
 
 ---@class ff2.ghost_manager.AttachedEntity
 ---@field entity LuaEntity
----@field key string
+---@field key framework.tools.EntityKey?
 ---@field tags Tags?
----@field player_index integer
+---@field player_index integer?
 ---@field tick integer
 ---@field pre_build ff2.ghost_manager.PreBuild?
 

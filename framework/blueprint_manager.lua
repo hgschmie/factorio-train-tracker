@@ -5,7 +5,6 @@ assert(script)
 assert(Framework)
 
 local Event = require('stdlib.event.event')
-local Is = require('stdlib.utils.is')
 local Player = require('stdlib.event.player')
 local table = require('stdlib.utils.table')
 
@@ -15,7 +14,7 @@ local tools = require('framework.tools')
 ---@field for_name table<string, any>
 ---@field for_type table<string, any>
 
----@alias framework.blueprint.PrepareCallback fun(blueprint: LuaItemStack): BlueprintEntity[]?
+---@alias framework.blueprint.PrepareCallback fun(blueprint: (LuaItemStack | LuaRecord)?): BlueprintEntity[]?
 ---@alias framework.blueprint.MapCallback fun(entity: LuaEntity, idx: integer, context: Tags?)
 ---@alias framework.blueprint.Callback fun(entity: LuaEntity, context: Tags?): table<string, any>?
 ---@alias framework.blueprint.EntityMap table<string, LuaEntity>
@@ -53,7 +52,7 @@ end
 ---@param player LuaPlayer
 ---@return boolean
 local function can_access_blueprint(player)
-    if not Is.Valid(player) then return false end
+    if not (player and player.valid) then return false end
     if not player.cursor_stack then return false end
 
     return (player.cursor_stack.valid_for_read and player.cursor_stack.name == 'blueprint')
@@ -128,7 +127,8 @@ local function on_player_setup_blueprint(event)
 
     local self = assert(Framework.blueprint)
 
-    local selected_entities = event.mapping.get()
+    ---@type LuaEntity[]
+    local selected_entities = event.mapping.get() --[[@as LuaEntity[] ]]
     -- for large blueprints, the event mapping might come up empty
     -- which seems to be a limitation of the game. Fall back to an
     -- area scan
@@ -143,7 +143,7 @@ local function on_player_setup_blueprint(event)
             area = event.area,
             force = player.force,
             type = table.keys(self.callbacks.for_type),
-        })
+        }) --[[@as LuaEntity[] ]]
     end
 
     local context = {}

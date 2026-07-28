@@ -51,7 +51,7 @@ function FrameworkDataUtil.copy_entity_prototype(prototype, new_name, make_invis
         error('Invalid prototype: prototypes must have name and type properties.')
     end
 
-    local p = util.copy(prototype) --[[ @as data.EntityPrototype ]]
+    local p = util.copy(prototype) --[[@as data.EntityPrototype ]]
     p.name = new_name
 
     if p.minable and p.minable.result then
@@ -100,15 +100,15 @@ function FrameworkDataUtil.copy_entity_prototype(prototype, new_name, make_invis
     return p
 end
 
----@param prototype data.Prototype
+---@param prototype Prototype
 ---@param new_name string The new name of the entity
----@return data.Prototype
+---@return Prototype
 function FrameworkDataUtil.copy_other_prototype(prototype, new_name)
     if not prototype.type or not prototype.name then
         error('Invalid prototype: prototypes must have name and type properties.')
     end
 
-    local p = util.copy(prototype) --[[ @as data.ItemPrototype ]]
+    local p = util.copy(prototype) --[[@as ItemPrototype ]]
     p.name = new_name
     if p.place_result then p.place_result = new_name end
     ---@diagnostic disable: inject-field, undefined-field
