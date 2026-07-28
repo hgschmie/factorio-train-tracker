@@ -12,14 +12,13 @@ local const = require('lib.constants')
 
 local Tree = require('scripts.tree')
 
----@class tt.Sorting
 local Sorting = require('scripts.sorting')
 
----@param gui framework.gui
----@param element LuaGuiElement
+---@param gui         framework.gui
+---@param element     LuaGuiElement
 ---@param entity_type string
----@param tab_name string
----@param sort_value string sorted value constant
+---@param tab_name    string
+---@param sort_value  tt.SortColumn sorted value constant
 local function add_checkbox(gui, element, entity_type, tab_name, sort_value)
     ---@type tt.PlayerStorage
     local player_data = assert(Player.pdata(gui.player_index))
@@ -51,10 +50,10 @@ local function add_checkbox(gui, element, entity_type, tab_name, sort_value)
     child.style.horizontal_align = 'center'
 end
 
----@param element LuaGuiElement
+---@param element     LuaGuiElement
 ---@param entity_type string
----@param tab_name string
----@param column_name string
+---@param tab_name    string
+---@param column_name tt.SortColumn
 local function add_heading(element, entity_type, tab_name, column_name)
     local tab_prefix = ('%s_%s'):format(entity_type, tab_name)
     local locale_key = ('%s.%s'):format(entity_type, column_name)
@@ -102,9 +101,9 @@ local tab_columns = {
     },
 }
 
----@param gui framework.gui
+---@param gui         framework.gui
 ---@param entity_type string
----@param tab_name string
+---@param tab_name    string
 ---@return tt.GuiElement
 local function get_gui_pane(gui, entity_type, tab_name)
     local gui_events = gui.gui_events
@@ -122,7 +121,7 @@ local function get_gui_pane(gui, entity_type, tab_name)
             elem_tags = {
                 entity_type = entity_type,
                 tab_name = tab_name,
-            }
+            },
         },
         content = {
             type = 'frame',
@@ -153,12 +152,11 @@ local function get_gui_pane(gui, entity_type, tab_name)
                             },
                         },
                     }, -- children
-                },     -- scroll-pane
-            },         -- children
-        },             -- content
-    }
+                }, -- scroll-pane
+            }, -- children
+        }, -- content
+    } --[[@as tt.GuiElement ]]
 end
-
 
 ------------------------------------------------------------------------
 -- gui pane creation
@@ -191,17 +189,16 @@ local function create_gui_pane(entity_type)
             local player_data = assert(Player.pdata(gui.player_index))
             local tab_state = player_data.tab_state[entity_type]
 
-            tab_state.sort = event.element.tags.value
+            tab_state.sort = event.element.tags.value --[[@as tt.SortColumn ]]
             tab_state.sort_mode[tab_state.sort] = event.element.state
 
-            ---@type tt.GuiContext
-            local context = gui.context
+            local context = gui.context --[[@as tt.GuiContext]]
             context.pacer = 0
         end,
         onClickEntity = function(event, gui)
             local player = assert(Player.get(gui.player_index))
 
-            local train_id = assert(event.element.tags.id)
+            local train_id = assert(event.element.tags.id) --[[@as integer]]
             local train = game.train_manager.get_train_by_id(train_id)
             if not (train and train.valid) then return end
             local loco = const.getMainLocomotive(train)
@@ -223,7 +220,7 @@ local function create_gui_pane(entity_type)
         onClickLastStation = function(event, gui)
             local player = assert(Player.get(gui.player_index))
 
-            local train_id = assert(event.element.tags.id)
+            local train_id = assert(event.element.tags.id) --[[@as integer]]
             local train_info = This.TrainTracker:getEntity(entity_type, train_id)
             if not train_info then return end
 
@@ -244,7 +241,7 @@ local function create_gui_pane(entity_type)
         onClickCurrentStation = function(event, gui)
             local player = assert(Player.get(gui.player_index))
 
-            local train_id = assert(event.element.tags.id)
+            local train_id = assert(event.element.tags.id) --[[@as integer]]
             local train_info = This.TrainTracker:getEntity(entity_type, train_id)
             if not train_info then return end
 
@@ -265,7 +262,7 @@ local function create_gui_pane(entity_type)
         onClickNextStation = function(event, gui)
             local player = assert(Player.get(gui.player_index))
 
-            local train_id = assert(event.element.tags.id)
+            local train_id = assert(event.element.tags.id) --[[@as integer]]
             local train_info = This.TrainTracker:getEntity(entity_type, train_id)
             if not train_info then return end
 
@@ -307,7 +304,9 @@ local function create_gui_pane(entity_type)
 
             local limit = const.limit_dropdown_values[tab_state.limit] or -1
 
+            ---@type tt.DropDownFunction
             local filter_func = assert(const.filter_dropdown_values[tab_state.filter or const.filter_dropdown.id])
+            ---@diagnostic disable-next-line: undefined-field
             local search = tab_state.search:pattern_escape():trim():lower()
             local columns = assert(tab_columns[tab_name])
 
@@ -316,6 +315,8 @@ local function create_gui_pane(entity_type)
             -- add headers
             for index, column_name in pairs(columns) do
                 local tab_info = assert(Sorting.tab_info[column_name])
+
+                ---@diagnostic disable-next-line: need-check-nil
                 train_table.style.column_alignments[index] = tab_info.alignment
                 if tab_info.comparator then
                     add_checkbox(gui, train_table, entity_type, tab_name, column_name)
@@ -327,7 +328,10 @@ local function create_gui_pane(entity_type)
             local tab_prefix = ('%s_%s'):format(entity_type, tab_name)
             local add_table_line = function(train_info)
                 if search:len() > 0 then
-                    local match_string = filter_func(train_info, entity_type, player):lower()
+                    local match_string = filter_func(train_info, entity_type, player)
+                    match_string = match_string and match_string:lower() or nil
+
+                    ---@diagnostic disable-next-line: undefined-field
                     if not (match_string and match_string:contains(search)) then return false end
                 end
 
@@ -337,7 +341,7 @@ local function create_gui_pane(entity_type)
 
                     local name = gui:generateGuiName(('%s-%d'):format(field_name, train_info.train_id))
 
-                    if tab_info.raw or false then
+                    if tab_info.raw then
                         tab_info.formatter(train_info, entity_type, train_table, name)
                     else
                         local tags = tab_info.tags and tab_info.tags(gui, train_info) or nil
@@ -351,6 +355,7 @@ local function create_gui_pane(entity_type)
                             tags = tags,
                             tooltip = (tags and tab_info.tooltip) and { const:locale('open_gui_' .. tab_info.tooltip) } or nil,
                         }
+                        ---@diagnostic disable-next-line: assign-type-mismatch
                         child.style.horizontal_align = tab_info.alignment
                     end
                 end
@@ -373,10 +378,11 @@ local function create_gui_pane(entity_type)
             local train_table = assert(gui:findElement(entity_table))
             if table_size(train_table.children) >= train_table.column_count then
                 for i = 1, train_table.column_count do
-                    local checkbox = train_table.children[i]
-                    if checkbox.tags.value then
-                        checkbox.style = (tab_state.sort == checkbox.tags.value) and 'tt_selected_sort_checkbox' or 'tt_sort_checkbox'
-                        checkbox.state = tab_state.sort_mode[checkbox.tags.value] or false
+                    local checkbox = assert(train_table.children[i])
+                    local value = checkbox.tags.value --[[@as tt.SortColumn? ]]
+                    if value then
+                        checkbox.style = (tab_state.sort == value) and 'tt_selected_sort_checkbox' or 'tt_sort_checkbox'
+                        checkbox.state = tab_state.sort_mode[value] or false
                     end
                 end
             end
@@ -388,6 +394,9 @@ local function create_gui_pane(entity_type)
     return gui_pane
 end
 
-return {
+---@class tt.EntityTab
+local EntityTab = {
     create_gui_pane = create_gui_pane,
 }
+
+return EntityTab

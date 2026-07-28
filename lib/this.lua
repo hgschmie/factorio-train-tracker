@@ -4,9 +4,9 @@
 
 ---@class tt.Mod
 ---@field other_mods table<string, string>
----@field TrainTracker tt.TrainTracker?
+---@field TrainTracker tt.TrainTracker
 ---@field Console tt.Console?
----@field Gui tt.Gui?
+---@field Gui tt.Gui
 local This = {
     remote_apis = {
         ['space-exploration'] = 'space-exploration',

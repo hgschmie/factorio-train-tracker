@@ -14,7 +14,7 @@ require('stdlib.utils.string')
 ---@field type 'item'|'fluid'
 ---@field name string
 ---@field quality string?
----@field count integer
+---@field count number
 
 ---@alias tt.Freight table<string, tt.FreightItem>
 
@@ -24,16 +24,16 @@ require('stdlib.utils.string')
 ---@field current_station LuaEntity?           Current train stop
 ---@field current_is_temporary boolean?
 ---@field current_signal LuaEntity?            Current signal where the train stops
----@field current_distance integer?            Total distance that the train will travel between two stops
+---@field current_distance number?             Total distance that the train will travel between two stops
 ---@field next_station (LuaEntity|string)?     Next station anticipated
 ---@field last_tick integer                    Last recorded event tick
 ---@field last_tick_state defines.train_state? Train state when the last event tick was recorded. Different from last_state
----@field total_distance integer               Total distance stat (in ticks)
+---@field total_distance number                Total distance stat (in ticks)
 ---@field total_runtime integer                Total runtime stat (in ticks)
 ---@field total_waittime integer               Total wait time stat (in ticks)
 ---@field signal_waittime integer              Total signal wait time stat (in ticks)
 ---@field stop_waittime integer                Total stop wait time stat (in ticks)
----@field train_name string                    Current train name
+---@field train_name string?                   Current train name
 ---@field train_id integer                     Current train id
 ---@field current_freight tt.Freight           Current freight on the train
 ---@field total_freight tt.Freight             Total freight moved by the train
@@ -55,7 +55,7 @@ require('stdlib.utils.string')
 ---@field DEBUG_TRAIN_ID integer?
 ---@field blacklist_function fun(train: LuaTrain): boolean
 local TrainTracker = {
-    DEBUG_MODE = Framework.settings:startup_setting('debug_mode'),
+    DEBUG_MODE = Framework.settings:startup_setting('debug_mode') --[[@as boolean]],
     DEBUG_TRAIN_ID = nil, -- set a train id to debug only a single train
 
     blacklist_function = function(train)
@@ -73,7 +73,8 @@ function TrainTracker:debugPrint(train, prefix, format_func)
     if not self.DEBUG_MODE then return end
     if TrainTracker.DEBUG_TRAIN_ID and TrainTracker.DEBUG_TRAIN_ID ~= train.id then return end
 
-    prefix = assert(prefix):ljust(18, ' ')
+    ---@diagnostic disable-next-line: undefined-field
+    prefix = prefix:ljust(18, ' ')
     game.print(('[font=debug-mono][train-tracker][%s][%s][/font] (Train: %d) %s'):format(const.formatTime(game.tick), prefix, train.id, format_func()),
         { sound = defines.print_sound.never, skip = defines.print_skip.never })
 end
@@ -113,7 +114,9 @@ function TrainTracker:getNextStation(train)
     local records = train.schedule.records
     local index = train.schedule.current
 
-    ---@type table<integer, boolean>
+    assert(records[index])
+
+    ---@type table<uint64, boolean>
     local candidate_rails = {}
 
     if train.path_end_rail then candidate_rails[train.path_end_rail.unit_number] = true end
@@ -138,7 +141,7 @@ end
 ---@return boolean
 local function stop_is_temporary(train)
     if train.schedule and train.schedule.records[train.schedule.current] then
-        return train.schedule.records[train.schedule.current].temporary
+        return train.schedule.records[train.schedule.current].temporary or false
     end
 
     return false
@@ -162,6 +165,7 @@ function TrainTracker:getFreightFromTrain(train)
     end
 
     for k, v in pairs(train.get_fluid_contents()) do
+        ---@type tt.FreightItem
         local freight_fluid = {
             type = 'fluid',
             name = k,
@@ -331,7 +335,7 @@ end
 local LOCK_TIMEOUT = 600 -- 10 seconds to teleport from A to B
 
 ---@param train LuaTrain
----@param old_train_id number
+---@param old_train_id integer
 ---@return tt.TrainInfo? Train info for the old train if it exists.
 function TrainTracker:beginClone(train, old_train_id)
     local entity_type = self:determineEntityType(train)
@@ -342,7 +346,7 @@ function TrainTracker:beginClone(train, old_train_id)
 end
 
 ---@param train LuaTrain
----@param old_train_id number
+---@param old_train_id integer
 ---@return tt.TrainInfo? train_info Train info for the new train if it exists
 function TrainTracker:commitClone(train, old_train_id)
     local entity_type = self:determineEntityType(train)

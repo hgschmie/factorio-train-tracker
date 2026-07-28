@@ -92,6 +92,7 @@ Constants.limit_dropdown = {
     show25 = 3,
 }
 
+---@type integer[]
 Constants.limit_dropdown_values = { -1, 10, 25 }
 
 ---@enum tt.filter_dropdown
@@ -107,20 +108,20 @@ Constants.filter_dropdown = {
 Constants.state_names = table.invert(defines.train_state)
 
 ---@param station (string|LuaEntity)?
----@param default string?
----@return string station_name
-function Constants.getStationName(station, default)
+---@param default_name string?
+---@return string? station_name
+function Constants.getStationName(station, default_name)
     if station then
         if type(station) == 'string' then return station end
         if station.valid then return station.backer_name end
     end
-    return default
+    return default_name
 end
 
 ---@param value number?
 ---@return string
 function Constants.formatDistance(value)
-    if value == 0 then return '0m' end
+    if not value or (value == 0) then return '0m' end
     if value < 10000 then return ('%.2fm'):format(value) end
     return ('%.2fkm'):format(value / 1000)
 end
@@ -128,8 +129,8 @@ end
 ---@param tick_value number?
 ---@return string
 function Constants.formatTime(tick_value)
-    if tick_value == 0 then return '0s' end
-    local seconds = tick_value / 60
+    if not tick_value or (tick_value == 0) then return '0s' end
+    local seconds = (tick_value or 0) / 60
     if seconds < 60 then return ('%.2fs'):format(seconds) end
     local minutes = math.floor(seconds / 60)
     seconds = seconds - minutes * 60
@@ -139,7 +140,8 @@ function Constants.formatTime(tick_value)
     return ('%02d:%02d:%05.2fs'):format(hours, minutes, seconds)
 end
 
----@type (fun(train_info: tt.TrainInfo, entity_type: string?, player: LuaPlayer?): string?)[]
+---@alias tt.DropDownFunction fun(train_info: tt.TrainInfo, entity_type: string?, player: LuaPlayer?): string?
+---@type tt.DropDownFunction[]
 Constants.filter_dropdown_values = {
     function(train_info) return tostring(train_info.train_id) end,
     function(train_info) return train_info.train_name end,
