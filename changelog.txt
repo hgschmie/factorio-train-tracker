@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.2
-Date: ????
+Date: 2026-07-28
   Bugfixes:
     - Fix that clicking header / elements does nothing
   Changes:
