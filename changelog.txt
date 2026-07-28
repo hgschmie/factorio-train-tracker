@@ -2,6 +2,7 @@
 Version: 2.0.3
 Date: ????
   Changes:
+    - Fix that clicking header / elements does nothing
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.2
 Date: 2026-06-27

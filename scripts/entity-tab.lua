@@ -37,7 +37,7 @@ local function add_checkbox(gui, element, entity_type, tab_name, sort_value)
         caption = { const:locale(locale_key) },
         tooltip = { const:locale('tooltip_' .. locale_key) },
         style = style,
-        tags = {
+        tags = gui:addTags {
             value = sort_value,
             entity_type = entity_type,
             handler = {
@@ -352,7 +352,7 @@ local function create_gui_pane(entity_type)
                             name = name,
                             caption = tab_info.formatter(train_info, entity_type, train_table, name) or { const:locale('unknown') },
                             style = tags and 'tt_clickable_label' or 'label',
-                            tags = tags,
+                            tags = gui:addTags(tags),
                             tooltip = (tags and tab_info.tooltip) and { const:locale('open_gui_' .. tab_info.tooltip) } or nil,
                         }
                         ---@diagnostic disable-next-line: assign-type-mismatch
