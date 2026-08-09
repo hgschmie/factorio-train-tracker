@@ -197,7 +197,7 @@ end
 ---@return string next entity type to process
 local function next_entity(ticker)
     ticker.entity_type = next(const.entity_types, ticker.entity_type) or next(const.entity_types)
-    return assert(ticker.entity_type)
+    return ticker.entity_type
 end
 
 local function onTick()
@@ -212,7 +212,7 @@ local function onTick()
     if index and not entities[index] then index = nil end
 
     if process_count > 0 then
-        ---@type tt.TrainInfo?
+        ---@type tt.TrainInfo
         local train_info
         repeat
             index, train_info = next(entities, index)

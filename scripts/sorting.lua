@@ -41,7 +41,7 @@ for _, key in pairs(Sorting.keys) do
     Sorting.sorting[key] = key --[[@as tt.SortColumn ]]
 end
 
----@alias tt.Formatter fun(train_info: tt.TrainInfo, entity_type: string, parent: LuaGuiElement, name: string): (string|LocalisedString|nil)
+---@alias tt.Formatter fun(train_info: tt.TrainInfo, entity_type: string?, parent: LuaGuiElement, name: string?): string|LocalisedString|nil
 
 ---@class tt.TabInfo
 ---@field comparator (fun(a: tt.TrainInfo, b: tt.TrainInfo): integer)?
@@ -76,7 +76,7 @@ end
 ------------------------------------------------------------------------
 
 ---@param value (integer|string)?
----@return string?
+---@return string
 local function format_string(value)
     return value and tostring(value) or nil
 end

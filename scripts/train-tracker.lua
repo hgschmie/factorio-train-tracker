@@ -55,7 +55,7 @@ require('stdlib.utils.string')
 ---@field DEBUG_TRAIN_ID integer?
 ---@field blacklist_function fun(train: LuaTrain): boolean
 local TrainTracker = {
-    DEBUG_MODE = Framework.settings:startup_setting('debug_mode') --[[@as boolean]],
+    DEBUG_MODE = Framework.settings:startup_setting('debug_mode'),
     DEBUG_TRAIN_ID = nil, -- set a train id to debug only a single train
 
     blacklist_function = function(train)
@@ -113,8 +113,6 @@ function TrainTracker:getNextStation(train)
     ---@type ScheduleRecord[]
     local records = train.schedule.records
     local index = train.schedule.current
-
-    assert(records[index])
 
     ---@type table<uint64, boolean>
     local candidate_rails = {}

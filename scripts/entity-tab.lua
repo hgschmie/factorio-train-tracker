@@ -152,10 +152,10 @@ local function get_gui_pane(gui, entity_type, tab_name)
                             },
                         },
                     }, -- children
-                }, -- scroll-pane
-            }, -- children
-        }, -- content
-    } --[[@as tt.GuiElement ]]
+                },     -- scroll-pane
+            },         -- children
+        },             -- content
+    }
 end
 
 ------------------------------------------------------------------------
@@ -192,13 +192,14 @@ local function create_gui_pane(entity_type)
             tab_state.sort = event.element.tags.value --[[@as tt.SortColumn ]]
             tab_state.sort_mode[tab_state.sort] = event.element.state
 
-            local context = gui.context --[[@as tt.GuiContext]]
+            ---@type tt.GuiContext
+            local context = gui.context
             context.pacer = 0
         end,
         onClickEntity = function(event, gui)
             local player = assert(Player.get(gui.player_index))
 
-            local train_id = assert(event.element.tags.id) --[[@as integer]]
+            local train_id = assert(event.element.tags.id)
             local train = game.train_manager.get_train_by_id(train_id)
             if not (train and train.valid) then return end
             local loco = const.getMainLocomotive(train)
@@ -220,7 +221,7 @@ local function create_gui_pane(entity_type)
         onClickLastStation = function(event, gui)
             local player = assert(Player.get(gui.player_index))
 
-            local train_id = assert(event.element.tags.id) --[[@as integer]]
+            local train_id = assert(event.element.tags.id)
             local train_info = This.TrainTracker:getEntity(entity_type, train_id)
             if not train_info then return end
 
@@ -241,7 +242,7 @@ local function create_gui_pane(entity_type)
         onClickCurrentStation = function(event, gui)
             local player = assert(Player.get(gui.player_index))
 
-            local train_id = assert(event.element.tags.id) --[[@as integer]]
+            local train_id = assert(event.element.tags.id)
             local train_info = This.TrainTracker:getEntity(entity_type, train_id)
             if not train_info then return end
 
@@ -262,7 +263,7 @@ local function create_gui_pane(entity_type)
         onClickNextStation = function(event, gui)
             local player = assert(Player.get(gui.player_index))
 
-            local train_id = assert(event.element.tags.id) --[[@as integer]]
+            local train_id = assert(event.element.tags.id)
             local train_info = This.TrainTracker:getEntity(entity_type, train_id)
             if not train_info then return end
 
@@ -304,7 +305,6 @@ local function create_gui_pane(entity_type)
 
             local limit = const.limit_dropdown_values[tab_state.limit] or -1
 
-            ---@type tt.DropDownFunction
             local filter_func = assert(const.filter_dropdown_values[tab_state.filter or const.filter_dropdown.id])
             ---@diagnostic disable-next-line: undefined-field
             local search = tab_state.search:pattern_escape():trim():lower()
@@ -316,7 +316,7 @@ local function create_gui_pane(entity_type)
             for index, column_name in pairs(columns) do
                 local tab_info = assert(Sorting.tab_info[column_name])
 
-                ---@diagnostic disable-next-line: need-check-nil
+                ---@diagnostic disable-next-line: assign-type-mismatch
                 train_table.style.column_alignments[index] = tab_info.alignment
                 if tab_info.comparator then
                     add_checkbox(gui, train_table, entity_type, tab_name, column_name)
@@ -341,7 +341,7 @@ local function create_gui_pane(entity_type)
 
                     local name = gui:generateGuiName(('%s-%d'):format(field_name, train_info.train_id))
 
-                    if tab_info.raw then
+                    if tab_info.raw or false then
                         tab_info.formatter(train_info, entity_type, train_table, name)
                     else
                         local tags = tab_info.tags and tab_info.tags(gui, train_info) or nil
@@ -355,7 +355,6 @@ local function create_gui_pane(entity_type)
                             tags = gui:addTags(tags),
                             tooltip = (tags and tab_info.tooltip) and { const:locale('open_gui_' .. tab_info.tooltip) } or nil,
                         }
-                        ---@diagnostic disable-next-line: assign-type-mismatch
                         child.style.horizontal_align = tab_info.alignment
                     end
                 end
@@ -378,8 +377,8 @@ local function create_gui_pane(entity_type)
             local train_table = assert(gui:findElement(entity_table))
             if table_size(train_table.children) >= train_table.column_count then
                 for i = 1, train_table.column_count do
-                    local checkbox = assert(train_table.children[i])
-                    local value = checkbox.tags.value --[[@as tt.SortColumn? ]]
+                    local checkbox = train_table.children[i]
+                    local value = checkbox.tags.value
                     if value then
                         checkbox.style = (tab_state.sort == value) and 'tt_selected_sort_checkbox' or 'tt_sort_checkbox'
                         checkbox.state = tab_state.sort_mode[value] or false
@@ -394,9 +393,6 @@ local function create_gui_pane(entity_type)
     return gui_pane
 end
 
----@class tt.EntityTab
-local EntityTab = {
+return {
     create_gui_pane = create_gui_pane,
 }
-
-return EntityTab

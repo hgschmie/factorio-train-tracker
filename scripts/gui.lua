@@ -57,8 +57,6 @@ local Gui = {
 ---@return framework.gui_manager.event_definition
 local function get_gui_event_definition()
     return {
-        -- See https://github.com/justarandomgeek/vscode-factoriomod-debug/issues/221
-        ---@diagnostic disable-next-line: assign-type-mismatch
         events = {
             onWindowClosed = Gui.onWindowClosed,
             onTabChanged = Gui.onTabChanged,
@@ -244,9 +242,9 @@ end
 function Gui.onTabChanged(event)
     local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
 
-    local tab_index = assert(event.element.selected_tab_index)
+    local tab_index = event.element.selected_tab_index
     local tab = assert(event.element.tabs[tab_index])
-    local entity_type = assert(tab.tab.tags.entity_type) --[[@as string]]
+    local entity_type = assert(tab.tab.tags.entity_type)
 
     ---@type tt.PlayerStorage
     local player_data = assert(Player.pdata(gui.player_index))
@@ -271,7 +269,8 @@ function Gui.onTabChanged(event)
         end
     end
 
-    local context = gui.context --[[@as tt.GuiContext]]
+    ---@type tt.GuiContext
+    local context = gui.context
     context.pacer = 0
 
     Gui.guiUpdater(gui)
@@ -285,7 +284,7 @@ function Gui.onSort(event)
     local player_data = assert(Player.pdata(gui.player_index))
 
     local entity_type = assert(player_data.tab)
-    return assert(Gui.gui_panes[entity_type]).onSort(event, gui)
+    return Gui.gui_panes[entity_type].onSort(event, gui)
 end
 
 ---@param event EventData.on_gui_click
@@ -296,7 +295,7 @@ function Gui.onClickEntity(event)
     local player_data = assert(Player.pdata(gui.player_index))
 
     local entity_type = assert(player_data.tab)
-    return assert(Gui.gui_panes[entity_type]).onClickEntity(event, gui)
+    return Gui.gui_panes[entity_type].onClickEntity(event, gui)
 end
 
 ---@param event EventData.on_gui_click
@@ -307,7 +306,7 @@ function Gui.onClickLastStation(event)
     local player_data = assert(Player.pdata(gui.player_index))
 
     local entity_type = assert(player_data.tab)
-    return assert(Gui.gui_panes[entity_type]).onClickLastStation(event, gui)
+    return Gui.gui_panes[entity_type].onClickLastStation(event, gui)
 end
 
 ---@param event EventData.on_gui_click
@@ -318,7 +317,7 @@ function Gui.onClickCurrentStation(event)
     local player_data = assert(Player.pdata(gui.player_index))
 
     local entity_type = assert(player_data.tab)
-    return assert(Gui.gui_panes[entity_type]).onClickCurrentStation(event, gui)
+    return Gui.gui_panes[entity_type].onClickCurrentStation(event, gui)
 end
 
 ---@param event EventData.on_gui_click
@@ -329,7 +328,7 @@ function Gui.onClickNextStation(event)
     local player_data = assert(Player.pdata(gui.player_index))
 
     local entity_type = assert(player_data.tab)
-    return assert(Gui.gui_panes[entity_type]).onClickNextStation(event, gui)
+    return Gui.gui_panes[entity_type].onClickNextStation(event, gui)
 end
 
 ---@param event EventData.on_gui_selection_state_changed
@@ -466,12 +465,12 @@ function Gui.guiUpdater(gui)
         main_tab.selected_tab_index = tab_state.tab_index
     end
 
-    local selected_tab = assert(main_tab.tabs[tab_state.tab_index])
-    local tab_name = assert(selected_tab.tab.tags.tab_name) --[[@as string]]
+    local tab_name = assert(main_tab.tabs[tab_state.tab_index].tab.tags.tab_name)
 
     if not gui_pane.updateGuiPane(gui, tab_name) then return false end
 
-    local context = gui.context --[[@as tt.GuiContext]]
+    ---@type tt.GuiContext
+    local context = gui.context
 
     if context.pacer <= 0 then
         context.pacer = 11 -- 11 * 11 = 121 ticks ~ 2 sec
