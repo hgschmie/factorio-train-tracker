@@ -46,6 +46,7 @@ local const = require('lib.constants')
 
 ---@class tt.Mod
 ---@field other_mods table<string, string>
+---@field settings ff2.ModSettings
 ---@field TrainTracker tt.TrainTracker
 ---@field Console tt.Console
 ---@field Gui tt.Gui

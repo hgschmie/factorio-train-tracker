@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
-Version: 1.1.3
+Version: 1.2.0
 Date: ????
   Changes:
+    - Add a new setting that allows temporary stops to be treated like regular stops if they have a name. If you use CyberSyn, you need to activate this option.
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.2
 Date: 2026-07-28

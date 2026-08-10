@@ -4,6 +4,8 @@
 
 This, Framework = require('lib.init')()
 
+local const = require('lib.constants')
+
 local framework_settings = {
     {
         -- Debug mode (framework dependency)
@@ -12,6 +14,13 @@ local framework_settings = {
         order = 'z',
         setting_type = 'startup',
         default_value = false,
+    },
+    {
+        type = 'bool-setting',
+        name = const.settings.use_named_temp_stops,
+        setting_type = 'startup',
+        default_value = false,
+        order = 'a',
     },
 }
 
