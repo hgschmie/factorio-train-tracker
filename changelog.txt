@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.1
 Date: ????
-  Changes:
+  Bugfixes:
+    - Fix crash when adding the mod to an existing save (reported by @mrDLSable on the forums, thank you!)
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.0
 Date: 2026-08-09

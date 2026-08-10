@@ -2,10 +2,7 @@
 -- Migrate framework gui stuff. Needed to adopt the multi-gui GUI manager
 --
 
-local const = require('lib.constants')
-
--- Framework core
-require('framework.init'):init(const.framework_init)
+This, Framework = require('lib.init')()
 
 local runtime_storage = Framework.runtime:storage()
 if not runtime_storage.gui_manager then return end
