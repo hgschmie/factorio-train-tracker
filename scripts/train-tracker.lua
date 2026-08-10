@@ -11,11 +11,9 @@ local math = require('stdlib.utils.math')
 require('stdlib.utils.string')
 
 ---@class tt.TrainTracker
----@field DEBUG_MODE boolean
 ---@field DEBUG_TRAIN_ID integer?
 ---@field blacklist_function fun(train: LuaTrain): boolean
 local TrainTracker = {
-    DEBUG_MODE = Framework.settings:startup_setting('debug_mode'),
     DEBUG_TRAIN_ID = nil, -- set a train id to debug only a single train
 
     blacklist_function = function(train)
@@ -30,7 +28,7 @@ local TrainTracker = {
 ---@param prefix string
 ---@param format_func fun(...: any?):string
 function TrainTracker:debugPrint(train, prefix, format_func)
-    if not self.DEBUG_MODE then return end
+    if not Framework.settings:startup_setting('debug_mode') then return end
     if TrainTracker.DEBUG_TRAIN_ID and TrainTracker.DEBUG_TRAIN_ID ~= train.id then return end
 
     ---@diagnostic disable-next-line: undefined-field
@@ -99,7 +97,11 @@ end
 ---@return boolean
 local function stop_is_temporary(train)
     if train.schedule and train.schedule.records[train.schedule.current] then
-        return train.schedule.records[train.schedule.current].temporary or false
+        local record = train.schedule.records[train.schedule.current]
+        if not record.temporary then return false end
+        if not record.station or (#record.station == 0) then return true end
+
+        return not Framework.settings:startup_setting('use_named_temp_stops')
     end
 
     return false

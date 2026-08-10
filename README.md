@@ -21,6 +21,16 @@ Limit, Filter and sorting settings persist across the tabs (it is possible to so
 
 The GUI hotkey by default is 'Control + Shift + T' (Option + Shift + T for macOS).
 
+## Settings
+
+### `Named temporary stops are considered regular stops` - boolean, default is `false`
+
+Some mods (e.g. [CyberSyn](https://mods.factorio.com/mod/cybersyn)) schedule trains using temporary stops for pickup and dropoff. Train Tracker normally ignores temporary stops as they are not intended for "regular" train schedules. Turning this setting on makes an effort to differentiate between temporary stops that are used to "route" trains to the right stop (which is what [LTN](https://mods.factorio.com/mod/LogisticTrainNetwork) and [CyberSyn](https://mods.factorio.com/mod/cybersyn) do by using temporary stops that use a rail instead of a station name) and temporary stops that are used as provider or requester. This is not perfect and may interfere e.g. with mods that use temporary stops for refueling.
+
+If you use [LTN](https://mods.factorio.com/mod/LogisticTrainNetwork), keep this setting off!
+
+If you use [CyberSyn](https://mods.factorio.com/mod/cybersyn), you must turn this setting on, otherwise your trains will not be tracked correctly (distance and freight will be wrong).
+
 ## Support for mod that move trains around
 
 There are a number of mods that provide "travel" for trains (e.g. between surfaces or through portals). Those generally work in the same way: They create a clone of a train in a different location (maybe even a different surface), then assign the schedule of the original train to that clone and then destroy the original train.
