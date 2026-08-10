@@ -151,7 +151,7 @@ end
 --------------------------------------------------------------------------------
 
 local function on_configuration_changed()
-    This.TrainTracker:init()
+    This:init()
     This.TrainTracker:resync()
 
     for player_index, player in pairs(game.players) do
@@ -186,8 +186,7 @@ end
 
 ---@return tt.Ticker
 local function get_ticker()
-    ---@type tt.Storage
-    local tt_data = storage.tt_data
+    local tt_data = This.storage()
 
     tt_data.ticker = tt_data.ticker or {}
     return tt_data.ticker
@@ -259,7 +258,7 @@ end
 --------------------------------------------------------------------------------
 
 local function on_init()
-    This.TrainTracker:init()
+    This:init()
     This.TrainTracker:resync()
     register_events()
 end

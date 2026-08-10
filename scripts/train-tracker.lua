@@ -10,46 +10,6 @@ local math = require('stdlib.utils.math')
 
 require('stdlib.utils.string')
 
----@class tt.FreightItem
----@field type 'item'|'fluid'
----@field name string
----@field quality string?
----@field count integer
-
----@alias tt.Freight table<string, tt.FreightItem>
-
----@class tt.TrainInfo
----@field last_state defines.train_state?      Last state seen for the train. Updated continously
----@field last_station LuaEntity?              Last observed stop
----@field current_station LuaEntity?           Current train stop
----@field current_is_temporary boolean?
----@field current_signal LuaEntity?            Current signal where the train stops
----@field current_distance integer?            Total distance that the train will travel between two stops
----@field next_station (LuaEntity|string)?     Next station anticipated
----@field last_tick integer                    Last recorded event tick
----@field last_tick_state defines.train_state? Train state when the last event tick was recorded. Different from last_state
----@field total_distance integer               Total distance stat (in ticks)
----@field total_runtime integer                Total runtime stat (in ticks)
----@field total_waittime integer               Total wait time stat (in ticks)
----@field signal_waittime integer              Total signal wait time stat (in ticks)
----@field stop_waittime integer                Total stop wait time stat (in ticks)
----@field train_name string                    Current train name
----@field train_id integer                     Current train id
----@field current_freight tt.Freight           Current freight on the train
----@field total_freight tt.Freight             Total freight moved by the train
----@field total_stop_count integer?            Number of times stopped at train stop
----@field total_signal_count integer?          Number of times stopped at a signal
----@field lock_time integer?                   Lock timestamp to protect from deletion (needed for teleport)
-
----@class tt.Storage
----@field trains table<integer, tt.TrainInfo>
----@field ships table<integer, tt.TrainInfo>
----@field ticker tt.Ticker
-
----@class tt.Ticker
----@field entity_type string?
----@field last_tick_index integer?
-
 ---@class tt.TrainTracker
 ---@field DEBUG_MODE boolean
 ---@field DEBUG_TRAIN_ID integer?
@@ -73,6 +33,7 @@ function TrainTracker:debugPrint(train, prefix, format_func)
     if not self.DEBUG_MODE then return end
     if TrainTracker.DEBUG_TRAIN_ID and TrainTracker.DEBUG_TRAIN_ID ~= train.id then return end
 
+---@diagnostic disable-next-line: undefined-field
     prefix = assert(prefix):ljust(18, ' ')
     game.print(('[font=debug-mono][train-tracker][%s][%s][/font] (Train: %d) %s'):format(const.formatTime(game.tick), prefix, train.id, format_func()),
         { sound = defines.print_sound.never, skip = defines.print_skip.never })
@@ -222,19 +183,6 @@ end
 -- init setup
 ------------------------------------------------------------------------
 
---- Setup the global data structures
-function TrainTracker:init()
-    -- init data
-    if not storage.tt_data then
-        ---@type tt.Storage
-        storage.tt_data = {
-            trains = {},
-            ships = {},
-            ticker = {},
-        }
-    end
-end
-
 function TrainTracker:resync()
     -- load current train set
     local known_entities = {}
@@ -261,8 +209,9 @@ end
 ---@param entity_type string
 ---@return table<integer, tt.TrainInfo>
 function TrainTracker:entities(entity_type)
-    storage.tt_data[entity_type] = storage.tt_data[entity_type] or {}
-    return assert(storage.tt_data[entity_type])
+    local tt_data = This.storage()
+    tt_data[entity_type] = tt_data[entity_type] or {}
+    return assert(tt_data[entity_type])
 end
 
 ---@param entity_type string

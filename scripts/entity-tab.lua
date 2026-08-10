@@ -308,6 +308,7 @@ local function create_gui_pane(entity_type)
             local limit = const.limit_dropdown_values[tab_state.limit] or -1
 
             local filter_func = assert(const.filter_dropdown_values[tab_state.filter or const.filter_dropdown.id])
+            ---@diagnostic disable-next-line: undefined-field
             local search = tab_state.search:pattern_escape():trim():lower()
             local columns = assert(tab_columns[tab_name])
 
@@ -328,6 +329,7 @@ local function create_gui_pane(entity_type)
             local add_table_line = function(train_info)
                 if search:len() > 0 then
                     local match_string = filter_func(train_info, entity_type, player):lower()
+                    ---@diagnostic disable-next-line: undefined-field
                     if not (match_string and match_string:contains(search)) then return false end
                 end
 

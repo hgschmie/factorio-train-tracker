@@ -4,7 +4,6 @@
 assert(script)
 
 local Event = require('stdlib.event.event')
-local Is = require('stdlib.utils.is')
 
 local const = require('lib.constants')
 
