@@ -5,6 +5,7 @@
 This, Framework = require('lib.init')()
 
 require('prototypes.hotkeys')
+require('prototypes.shortcuts')
 require('prototypes.styles')
 
 ---@diagnostic disable-next-line: undefined-field

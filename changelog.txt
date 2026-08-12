@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
-Version: 2.1.2
+Version: 2.2.0
 Date: ????
+  Features:
+    - Added a shortcut bar button to open and close the Train Tracker window. Suggested by @3ara3ik on the forums.
   Changes:
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.1
