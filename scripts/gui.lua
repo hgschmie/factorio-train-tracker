@@ -415,6 +415,7 @@ function Gui.openGui(player)
     }
 
     player_data.toggle = true
+    player.set_shortcut_toggled(const.hotkey_names.toggle_display, player_data.toggle)
 end
 
 function Gui.closeGui(player)
@@ -423,6 +424,7 @@ function Gui.closeGui(player)
     Framework.gui_manager:destroyGui(player.index, Gui.NAME)
 
     player_data.toggle = false
+    player.set_shortcut_toggled(const.hotkey_names.toggle_display, player_data.toggle)
 end
 
 ----------------------------------------------------------------------------------------------------
@@ -487,12 +489,10 @@ end
 -- Event registration
 ----------------------------------------------------------------------------------------------------
 
-local function toggle_hotkey(event)
-    ---@type LuaPlayer, tt.PlayerStorage
-    local player, player_data = Player.get(event.player_index)
-    assert(player)
-    assert(player_data)
-
+---@param player LuaPlayer
+function Gui.toggleGui(player)
+    ---@type tt.PlayerStorage
+    local player_data = assert(Player.pdata(player.index))
     player_data.toggle = player_data.toggle or false
 
     if player_data.toggle then
@@ -502,10 +502,23 @@ local function toggle_hotkey(event)
     end
 end
 
+---@param event EventData.CustomInputEvent
+local function toggle_hotkey(event)
+    local player = assert(Player.get(event.player_index))
+    Gui.toggleGui(player)
+end
+
+---@param event EventData.on_lua_shortcut
+local function toggle_shortcut(event)
+    if event.prototype_name ~= const.hotkey_names.toggle_display then return end
+    local player = assert(Player.get(event.player_index))
+    Gui.toggleGui(player)
+end
 
 local function init_gui()
     Framework.gui_manager:registerGuiType(Gui.NAME, get_gui_event_definition())
     Event.on_event(const.hotkey_names.toggle_display, toggle_hotkey)
+    Event.on_event(defines.events.on_lua_shortcut, toggle_shortcut)
 end
 
 Event.on_init(init_gui)

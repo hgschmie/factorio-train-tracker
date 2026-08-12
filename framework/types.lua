@@ -50,6 +50,7 @@
 ----------------------------------------------------------------------------------------------------
 
 ---@alias FrameworkSettingsStorage table<string, (FrameworkSettingValue|table<string, FrameworkSettingValue?>)?>?
+---@alias ff2.ModSettings table<FrameworkSettings.name, FrameworkSettingsGroup>
 
 ---@class FrameworkSettingsProvider
 ---@field values FrameworkSettingsStorage

@@ -73,8 +73,10 @@ Space Exploration provides the "old train" id as a number and the "new train" in
 
 ## Legal and other stuff
 
-(C) 2025 Henning Schmiedehausen (hgschmie)
+(C) 2025-2026 Henning Schmiedehausen (hgschmie)
+
+[The tracker icon](https://www.flaticon.com/free-icons/train) was created by Creaticca Creative Agency - Flaticon
 
 Report Bugs either directly [on github](https://github.com/hgschmie/factorio-train-tracker/issues) (preferred!) or on the [Mod discussion forum](https://mods.factorio.com/mod/train-tracker/discussion). Pull requests for mod support or questions are very welcome.
 
-I occasionally hang out [on the official Factorio discord](https://discord.gg/factorio). Find me on `#mod-dev-help` or `#mod-dev-discussion`.
+The code was partially written and reviewed by AI coding agents. If you are fundamentally opposed to using AI tools to develop software and improve software quality, you are free to not install it.

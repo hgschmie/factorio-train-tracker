@@ -1,7 +1,10 @@
 ---------------------------------------------------------------------------------------------------
-Version: 1.2.1
+Version: 1.3.0
 Date: ????
-  Changes:
+  Features:
+    - Added a shortcut bar button to open and close the Train Tracker window. Suggested by @3ara3ik on the forums.
+  Bugfixes:
+    - Fix crash when adding the mod to an existing save (reported by @mrDLSable on the forums, thank you!)
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.0
 Date: 2026-08-09

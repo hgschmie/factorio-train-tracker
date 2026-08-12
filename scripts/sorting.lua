@@ -46,11 +46,10 @@ end
 ---@class tt.TabInfo
 ---@field comparator (fun(a: tt.TrainInfo, b: tt.TrainInfo): integer)?
 ---@field formatter tt.Formatter
----@field tags (fun(gui: framework.gui, train_info: tt.TrainInfo, event_type: string?) : table<string, string>)?
+---@field tags (fun(gui: framework.gui, train_info: tt.TrainInfo) : Tags?)?
 ---@field alignment string?
 ---@field tooltip string?
 ---@field raw boolean?
-
 
 ------------------------------------------------------------------------
 -- Comparators
@@ -144,7 +143,7 @@ end
 
 ---@param gui framework.gui
 ---@param train_info tt.TrainInfo
----@return table<string, string>?
+---@return Tags?
 local function tag_train_id(gui, train_info)
     if not train_info.train_name then return nil end
 
@@ -158,7 +157,7 @@ end
 
 ---@param gui framework.gui
 ---@param train_info tt.TrainInfo
----@return table<string, string>?
+---@return Tags?
 local function tag_last_station_id(gui, train_info)
     if not (train_info.last_station and train_info.last_station.valid) then return nil end
 
@@ -172,7 +171,7 @@ end
 
 ---@param gui framework.gui
 ---@param train_info tt.TrainInfo
----@return table<string, string>?
+---@return Tags?
 local function tag_current_station_id(gui, train_info)
     if not (train_info.current_station and train_info.current_station.valid) then return nil end
 
@@ -186,7 +185,7 @@ end
 
 ---@param gui framework.gui
 ---@param train_info tt.TrainInfo
----@return table<string, string>?
+---@return Tags?
 local function tag_next_station_id(gui, train_info)
     if not (train_info.next_station and type(train_info.next_station) ~= 'string') then return nil end
 

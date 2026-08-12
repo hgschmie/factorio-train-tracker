@@ -122,7 +122,7 @@ local function get_gui_pane(gui, entity_type, tab_name)
             elem_tags = {
                 entity_type = entity_type,
                 tab_name = tab_name,
-            }
+            },
         },
         content = {
             type = 'frame',
@@ -158,7 +158,6 @@ local function get_gui_pane(gui, entity_type, tab_name)
         },             -- content
     }
 end
-
 
 ------------------------------------------------------------------------
 -- gui pane creation
@@ -328,7 +327,9 @@ local function create_gui_pane(entity_type)
             local tab_prefix = ('%s_%s'):format(entity_type, tab_name)
             local add_table_line = function(train_info)
                 if search:len() > 0 then
-                    local match_string = filter_func(train_info, entity_type, player):lower()
+                    local match_string = filter_func(train_info, entity_type, player)
+                    match_string = match_string and match_string:lower() or nil
+
                     ---@diagnostic disable-next-line: undefined-field
                     if not (match_string and match_string:contains(search)) then return false end
                 end
@@ -376,9 +377,10 @@ local function create_gui_pane(entity_type)
             if table_size(train_table.children) >= train_table.column_count then
                 for i = 1, train_table.column_count do
                     local checkbox = train_table.children[i]
-                    if checkbox.tags.value then
-                        checkbox.style = (tab_state.sort == checkbox.tags.value) and 'tt_selected_sort_checkbox' or 'tt_sort_checkbox'
-                        checkbox.state = tab_state.sort_mode[checkbox.tags.value] or false
+                    local value = checkbox.tags.value
+                    if value then
+                        checkbox.style = (tab_state.sort == value) and 'tt_selected_sort_checkbox' or 'tt_sort_checkbox'
+                        checkbox.state = tab_state.sort_mode[value] or false
                     end
                 end
             end
