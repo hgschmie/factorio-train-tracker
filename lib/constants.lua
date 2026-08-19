@@ -8,6 +8,7 @@ local table = require('stdlib.utils.table')
 
 local Constants = {
     prefix = 'hps__tt-',
+    log_prefix = 'TT',
     name = 'train-tracker',
     root = '__train-tracker__',
 }

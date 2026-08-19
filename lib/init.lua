@@ -13,6 +13,10 @@ if this.settings then
     framework.settings:add_defaults(this.settings)
 end
 
+if script then
+    this.boot()
+end
+
 return function()
     return this, framework
 end

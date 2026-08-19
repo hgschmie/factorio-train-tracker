@@ -57,7 +57,7 @@ local This = {
     settings = require('lib.settings')
 }
 
-if (script) then
+function This.boot()
     This.TrainTracker = require('scripts.train-tracker')
     This.Console = require('scripts.console')
     This.Gui = require('scripts.gui')
@@ -72,6 +72,8 @@ function This.framework_init()
     return {
         -- prefix is the internal mod prefix
         prefix = const.prefix,
+        -- prefix for log messages
+        log_prefix = const.log_prefix,
         -- name is a human readable name
         name = const.name,
         -- The filesystem root.

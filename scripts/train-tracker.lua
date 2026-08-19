@@ -10,6 +10,8 @@ local math = require('stdlib.utils.math')
 
 require('stdlib.utils.string')
 
+local DEBUG_MODE = Framework.settings:get_debug_level() >= 1
+
 ---@class tt.TrainTracker
 ---@field DEBUG_TRAIN_ID integer?
 ---@field blacklist_function fun(train: LuaTrain): boolean
@@ -28,7 +30,7 @@ local TrainTracker = {
 ---@param prefix string
 ---@param format_func fun(...: any?):string
 function TrainTracker:debugPrint(train, prefix, format_func)
-    if not Framework.settings:startup_setting('debug_mode') then return end
+    if not DEBUG_MODE then return end
     if TrainTracker.DEBUG_TRAIN_ID and TrainTracker.DEBUG_TRAIN_ID ~= train.id then return end
 
     ---@diagnostic disable-next-line: undefined-field
