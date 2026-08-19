@@ -120,7 +120,7 @@ end
 function FrameworkGuiManager:executeGuiHandler(handler_id, event, gui)
     -- find the event mapping for the GUI
     local gui_definition = assert(self.known_gui_types[gui.type])
-    local event_handler = assert(gui_definition.events)[handler_id]
+    local event_handler = gui_definition.events[handler_id]
     if not event_handler then return false end
     event_handler(event, gui)
     return true
@@ -132,7 +132,7 @@ end
 function FrameworkGuiManager:determineGuiHandlerId(event, gui)
     local event_handler_map = assert(gui.event_handlers[event.name])
 
-    ---@type LuaGuiElement?
+    ---@type LuaGuiElement
     local elem = event.element
     assert(elem and elem.valid)
     return event_handler_map[elem.name]
@@ -144,14 +144,14 @@ end
 function FrameworkGuiManager:dispatch(event)
     if not event then return false end
 
-    ---@type LuaGuiElement?
+    ---@type LuaGuiElement
     local elem = event.element
     if not (elem and elem.valid) then return false end
 
     local player_index = event.player_index
 
     -- find the GUI for the player
-    local gui_type = tostring(elem.tags['__GUI_TYPE'])
+    local gui_type = elem.tags['__GUI_TYPE']
     if not gui_type then return false end
 
     local gui = self:findGui(player_index, gui_type)

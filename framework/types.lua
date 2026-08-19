@@ -14,9 +14,9 @@
 
 ---@class ff2.ghost_manager.AttachedEntity
 ---@field entity LuaEntity
----@field key framework.tools.EntityKey?
+---@field key string
 ---@field tags Tags?
----@field player_index integer?
+---@field player_index integer
 ---@field tick integer
 ---@field pre_build ff2.ghost_manager.PreBuild?
 
@@ -41,6 +41,7 @@
 ---@class FrameworkConfig
 ---@field name string The human readable name for the module
 ---@field prefix string A prefix for all game registered elements
+---@field log_prefix string A prefix for all log messages
 ---@field root string The module root name
 ---@field log_tag string? A custom logger tag
 ---@field exported_api_name string? The name for the remote interface. If defined, the mod will expose an API for other mods to call.
@@ -49,6 +50,7 @@
 --- settings.lua
 ----------------------------------------------------------------------------------------------------
 
+---@alias ff2.ModSettings table<FrameworkSettings.name, FrameworkSettingsGroup>
 ---@alias FrameworkSettingsStorage table<string, (FrameworkSettingValue|table<string, FrameworkSettingValue?>)?>?
 
 ---@class FrameworkSettingsProvider

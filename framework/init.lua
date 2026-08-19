@@ -28,7 +28,7 @@ local Is = require('stdlib.utils.is')
 ---@field translation_manager framework.translation.Manager
 ---@field other_mods framework.OtherModsManager
 ---@field RemoteApis ff2.RemoteApisManager
----@field ExportedApis table<string, function>?
+---@field ExportedApis table<string, function>
 ---@field render FrameworkRender
 local FrameworkInit = {
     --- The non-localised prefix (textual ID) of this mod.
@@ -52,15 +52,11 @@ function FrameworkInit:init_runtime(config)
     -- runtime stage
     self.runtime = self.runtime or require('framework.runtime')
 
-    self.logger:init()
+    self.RUN_ID = self.runtime:get_run_id()
 
-    self.logger:log('================================================================================')
-    self.logger:log('==')
-    self.logger:logf("== Framework logfile for '%s' mod intialized ", FrameworkInit.NAME)     --(debug mode: %s)", FrameworkInit.NAME, tostring(self.debug_mode))
-    self.logger:log('==')
-    self.logger:logf('== Run ID: %d', FrameworkInit.RUN_ID)
-    self.logger:log('================================================================================')
-    self.logger:flush()
+    self.logger.log(-1, 'Framework', '================================================================================')
+    self.logger.log(-1, 'Framework', "== mod '%s' initialized, run id: %d", function() return FrameworkInit.NAME, FrameworkInit.RUN_ID end)
+    self.logger.log(-1, 'Framework', '================================================================================')
 
     self.gui_manager = self.gui_manager or require('framework.gui_manager')
     self.Ghost = self.Ghost or require('framework.ghost_manager')
@@ -96,7 +92,7 @@ function FrameworkInit:init(config)
 
     -- load only once per stage
     self.settings = self.settings or require('framework.settings') --[[@as FrameworkSettings ]]
-    self.logger = self.logger or require('framework.logger') --[[@as FrameworkLogger ]]
+    self.logger = self.logger or require('framework.logger')(config.log_prefix, self.settings:get_debug_level())
     self.other_mods = self.other_mods or require('framework.other-mods')
     self.RemoteApis = self.RemoteApis or require('framework.remote-apis')
 
@@ -118,14 +114,14 @@ end
 -- add meta methods
 ---------------------------------------------------------------------------------------------------
 
-local GAME_STAGES = { 'settings', 'data', 'data_updates', 'data_final_fixes', 'runtime' }
+local game_stages = { 'settings', 'data', 'data_updates', 'data_final_fixes', 'runtime' }
 
 local Framework_mt = {}
 setmetatable(FrameworkInit, Framework_mt)
 
 local prototype = {}
 
-for _, game_stage in pairs(GAME_STAGES) do
+for _, game_stage in pairs(game_stages) do
     prototype['post_' .. game_stage .. '_stage'] = function()
         -- otherwise, it is an stage method, pass it to the submodules
         FrameworkInit.other_mods[game_stage]() -- other-mods subsystem
