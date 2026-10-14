@@ -10,6 +10,7 @@
   "dependencies": [
     "base >= 2.1.7",
     "(?)cargo-ships"
+    "(?)RiftRail"
   ],
   "package": {
     "git_publish_branch": "main",

@@ -53,6 +53,7 @@ local const = require('lib.constants')
 local This = {
     remote_apis = {
         ['space-exploration'] = 'space-exploration',
+        ['RiftRail'] = 'rift-rail',
     },
     settings = require('lib.settings')
 }
