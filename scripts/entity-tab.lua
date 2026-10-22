@@ -287,14 +287,15 @@ local function create_gui_pane(entity_type)
             local train_table = assert(gui:findElement(entity_table))
             if not train_table then return false end
 
-            ---@type LuaPlayer, tt.PlayerStorage
             local player, player_data = Player.get(gui.player_index)
+            ---@cast player_data tt.PlayerStorage
             assert(player)
             assert(player_data)
 
             local trains = This.TrainTracker:entities(entity_type)
 
             local tab_state = player_data.tab_state[entity_type]
+            ---@cast tab_state -?
 
             local comparator = assert(Sorting.tab_info[tab_state.sort].comparator)
             local tree = Tree.create(comparator, tab_state.sort_mode[tab_state.sort])
@@ -370,15 +371,17 @@ local function create_gui_pane(entity_type)
         updateGuiPane = function(gui, tab_name)
             local entity_table = (('%s_%s'):format(entity_type, tab_name)) .. '_table'
 
-            ---@type tt.PlayerStorage
-            local player_data = assert(Player.pdata(gui.player_index))
+            local player_data = Player.pdata(gui.player_index) --[[@as tt.PlayerStorage]]
             local tab_state = player_data.tab_state[entity_type]
+            ---@cast tab_state -?
 
             local train_table = assert(gui:findElement(entity_table))
             if table_size(train_table.children) >= train_table.column_count then
                 for i = 1, train_table.column_count do
                     local checkbox = train_table.children[i]
+                    ---@cast checkbox -?
                     local value = checkbox.tags.value
+                    ---@cast value tt.SortColumn?
                     if value then
                         checkbox.style = (tab_state.sort == value) and 'tt_selected_sort_checkbox' or 'tt_sort_checkbox'
                         checkbox.state = tab_state.sort_mode[value] or false

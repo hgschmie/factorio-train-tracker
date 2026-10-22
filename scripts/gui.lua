@@ -19,7 +19,7 @@ local Sorting = require('scripts.sorting')
 ---@field filter tt.filter_dropdown
 ---@field search string
 
----@class tt.PlayerStorage
+---@class tt.PlayerStorage : table<string, any>
 ---@field tab_state table<string, tt.TabState>
 ---@field tab string
 ---@field toggle boolean?
@@ -243,11 +243,13 @@ function Gui.onTabChanged(event)
     local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
 
     local tab_index = event.element.selected_tab_index
+    ---@cast tab_index -?
     local tab = assert(event.element.tabs[tab_index])
-    local entity_type = assert(tab.tab.tags.entity_type)
+    local entity_type = tab.tab.tags.entity_type
+    ---@cast entity_type string
 
     ---@type tt.PlayerStorage
-    local player_data = assert(Player.pdata(gui.player_index))
+    local player_data = Player.pdata(gui.player_index) --[[@as tt.PlayerStorage]]
     -- player_data.tab always holds the current entity type
     player_data.tab = entity_type
 
@@ -269,8 +271,7 @@ function Gui.onTabChanged(event)
         end
     end
 
-    ---@type tt.GuiContext
-    local context = gui.context
+    local context = gui.context --[[@as tt.GuiContext]]
     context.pacer = 0
 
     Gui.guiUpdater(gui)
@@ -280,67 +281,72 @@ end
 function Gui.onSort(event)
     local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
 
-    ---@type tt.PlayerStorage
-    local player_data = assert(Player.pdata(gui.player_index))
+    local player_data = Player.pdata(gui.player_index) --[[@as tt.PlayerStorage]]
 
     local entity_type = assert(player_data.tab)
-    return Gui.gui_panes[entity_type].onSort(event, gui)
+    local gui_pane = Gui.gui_panes[entity_type]
+    ---@cast gui_pane -?
+    return gui_pane.onSort(event, gui)
 end
 
 ---@param event EventData.on_gui_click
 function Gui.onClickEntity(event)
     local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
 
-    ---@type tt.PlayerStorage
-    local player_data = assert(Player.pdata(gui.player_index))
+    local player_data = Player.pdata(gui.player_index) --[[@as tt.PlayerStorage]]
 
     local entity_type = assert(player_data.tab)
-    return Gui.gui_panes[entity_type].onClickEntity(event, gui)
+    local gui_pane = Gui.gui_panes[entity_type]
+    ---@cast gui_pane -?
+    return gui_pane.onClickEntity(event, gui)
 end
 
 ---@param event EventData.on_gui_click
 function Gui.onClickLastStation(event)
     local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
 
-    ---@type tt.PlayerStorage
-    local player_data = assert(Player.pdata(gui.player_index))
+    local player_data = Player.pdata(gui.player_index) --[[@as tt.PlayerStorage]]
 
     local entity_type = assert(player_data.tab)
-    return Gui.gui_panes[entity_type].onClickLastStation(event, gui)
+    local gui_pane = Gui.gui_panes[entity_type]
+    ---@cast gui_pane -?
+    return gui_pane.onClickLastStation(event, gui)
 end
 
 ---@param event EventData.on_gui_click
 function Gui.onClickCurrentStation(event)
     local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
 
-    ---@type tt.PlayerStorage
-    local player_data = assert(Player.pdata(gui.player_index))
+    local player_data = Player.pdata(gui.player_index) --[[@as tt.PlayerStorage]]
 
     local entity_type = assert(player_data.tab)
-    return Gui.gui_panes[entity_type].onClickCurrentStation(event, gui)
+    local gui_pane = Gui.gui_panes[entity_type]
+    ---@cast gui_pane -?
+    return gui_pane.onClickCurrentStation(event, gui)
 end
 
 ---@param event EventData.on_gui_click
 function Gui.onClickNextStation(event)
     local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
 
-    ---@type tt.PlayerStorage
-    local player_data = assert(Player.pdata(gui.player_index))
+    local player_data = Player.pdata(gui.player_index) --[[@as tt.PlayerStorage]]
 
     local entity_type = assert(player_data.tab)
-    return Gui.gui_panes[entity_type].onClickNextStation(event, gui)
+    local gui_pane = Gui.gui_panes[entity_type]
+    ---@cast gui_pane -?
+    return gui_pane.onClickNextStation(event, gui)
 end
 
 ---@param event EventData.on_gui_selection_state_changed
 function Gui.onLimitChanged(event)
     local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
 
-    ---@type tt.PlayerStorage
-    local player_data = assert(Player.pdata(gui.player_index))
+    local player_data = Player.pdata(gui.player_index) --[[@as tt.PlayerStorage]]
 
     local tab_state = assert(player_data.tab_state[player_data.tab])
 
     tab_state.limit = event.element.selected_index --[[@as tt.limit_dropdown ]]
+    ---@cast gui.context -?
     gui.context.pacer = 0 -- force refresh
 end
 
@@ -348,8 +354,7 @@ end
 function Gui.onFilterFieldChanged(event)
     local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
 
-    ---@type tt.PlayerStorage
-    local player_data = assert(Player.pdata(gui.player_index))
+    local player_data = Player.pdata(gui.player_index) --[[@as tt.PlayerStorage]]
 
     local entity_type = player_data.tab
     local tab_state = assert(player_data.tab_state[entity_type])
@@ -360,6 +365,7 @@ function Gui.onFilterFieldChanged(event)
     local filter_text = assert(gui:findElement('filter-text'))
     filter_text.text = tab_state.search
 
+    ---@cast gui.context -?
     gui.context.pacer = 0 -- force refresh
 end
 
@@ -367,13 +373,13 @@ end
 function Gui.onFilterTextChanged(event)
     local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
 
-    ---@type tt.PlayerStorage
-    local player_data = assert(Player.pdata(gui.player_index))
+    local player_data = Player.pdata(gui.player_index) --[[@as tt.PlayerStorage]]
 
     local tab_state = assert(player_data.tab_state[player_data.tab])
 
     tab_state.search = event.text
 
+    ---@cast gui.context -?
     gui.context.pacer = 0 -- force refresh
 end
 
@@ -384,8 +390,7 @@ end
 --- @param player LuaPlayer
 function Gui.openGui(player)
 
-    ---@type tt.PlayerStorage
-    local player_data = assert(Player.pdata(player.index))
+    local player_data = Player.pdata(player.index) --[[@as tt.PlayerStorage]]
 
     player_data.tab_state = player_data.tab_state or {}
 
@@ -400,7 +405,7 @@ function Gui.openGui(player)
     -- player_data.tab always holds the current entity_type
     player_data.tab = player_data.tab or const.entity_types.trains
 
-    ---@class tt.GuiContext
+    ---@class tt.GuiContext: framework.gui.context
     ---@field pacer integer
     local gui_state = {
         pacer = 0,
@@ -419,8 +424,7 @@ function Gui.openGui(player)
 end
 
 function Gui.closeGui(player)
-    ---@type tt.PlayerStorage
-    local player_data = assert(Player.pdata(player.index))
+    local player_data = Player.pdata(player.player_index) --[[@as tt.PlayerStorage]]
     Framework.gui_manager:destroyGui(player.index, Gui.NAME)
 
     player_data.toggle = false
@@ -434,8 +438,7 @@ end
 ---@param gui framework.gui
 ---@return boolean
 function Gui.guiUpdater(gui)
-    ---@type tt.PlayerStorage?
-    local player_data = Player.pdata(gui.player_index)
+    local player_data = Player.pdata(gui.player_index) --[[@as tt.PlayerStorage]]
     if not player_data then return false end
     ---@type tt.GuiPane?
     local gui_pane = Gui.gui_panes[player_data.tab]
@@ -467,12 +470,12 @@ function Gui.guiUpdater(gui)
         main_tab.selected_tab_index = tab_state.tab_index
     end
 
-    local tab_name = assert(main_tab.tabs[tab_state.tab_index].tab.tags.tab_name)
+    local tab_name = assert(main_tab.tabs[tab_state.tab_index]).tab.tags.tab_name
+    ---@cast tab_name string
 
     if not gui_pane.updateGuiPane(gui, tab_name) then return false end
 
-    ---@type tt.GuiContext
-    local context = gui.context
+    local context = gui.context --[[@as tt.GuiContext]]
 
     if context.pacer <= 0 then
         context.pacer = 11 -- 11 * 11 = 121 ticks ~ 2 sec
@@ -491,8 +494,7 @@ end
 
 ---@param player LuaPlayer
 function Gui.toggleGui(player)
-    ---@type tt.PlayerStorage
-    local player_data = assert(Player.pdata(player.index))
+    local player_data = Player.pdata(player.index) --[[@as tt.PlayerStorage]]
     player_data.toggle = player_data.toggle or false
 
     if player_data.toggle then

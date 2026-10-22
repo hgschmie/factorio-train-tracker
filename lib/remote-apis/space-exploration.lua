@@ -4,13 +4,20 @@
 
 local Event = require('stdlib.event.event')
 
----@class SETeleportStartedEvent
+---@class (partial) LuaRemote.InterfaceMap
+---@field space-exploration SpaceExploration.RemoteInterface
+
+---@class SpaceExploration.RemoteInterface
+---@field get_on_train_teleport_started_event fun(): defines.events
+---@field get_on_train_teleport_finished_event fun(): defines.events
+
+---@class SETeleportStartedEvent : EventData
 ---@field train LuaTrain
 ---@field old_train_id_1 integer
 ---@field old_surface_index integer
 ---@field teleported LuaEntity
 
----@class SETeleportFinishedEvent
+---@class SETeleportFinishedEvent : EventData
 ---@field train LuaTrain
 ---@field old_train_id_1 integer
 ---@field old_surface_index integer

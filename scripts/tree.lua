@@ -11,10 +11,10 @@
 
 ---@class Tree
 ---@field comparator tree_comparator
----@field reverse boolean
+---@field reverse boolean?
 ---@field root TreeNode
----@field add (fun(self: Tree, value: any))?
----@field traverse (fun(self: Tree, sink: (fun(value: any): boolean), limit: number?))?
+---@field add fun(self: Tree, value: any)
+---@field traverse fun(self: Tree, sink: (fun(value: any): boolean), limit: number?)
 
 
 local Tree_MT = {}
@@ -24,16 +24,16 @@ Tree_MT.__index = function(_t, k)
 end
 
 ---@param comparator tree_comparator
----@param reverse boolean
+---@param reverse boolean?
 ---@return Tree
 function Tree_MT.create(comparator, reverse)
-    ---@type Tree
     local tree_root = {
         comparator = comparator,
         reverse = reverse,
         root = {}
     }
     setmetatable(tree_root, Tree_MT)
+    ---@cast tree_root Tree
     return tree_root
 end
 

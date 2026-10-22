@@ -57,7 +57,7 @@ require('stdlib.utils.string')
 ---@field root LuaGuiElement? Root element of the tree.
 ---@field event_handlers table<defines.events, table<string, string>> -- map from the event to the handler name. The handler can not be stored here because it is not serializable
 ---@field entity_id number? The entity for which the Gui has been opened
----@field player_index number
+---@field player_index integer
 ---@field context framework.gui.context?
 local FrameworkGui = {
     count = 0,

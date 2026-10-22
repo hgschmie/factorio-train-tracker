@@ -9,10 +9,9 @@ local this = require('lib.this')
 local framework = require('framework.init')
 framework:init(this.framework_init)
 
-if this.settings then
-    framework.settings:add_defaults(this.settings)
-end
+framework.settings:add_defaults(this.settings)
 
+---@cast script LuaBootstrap?
 if script then
     this.boot()
 end

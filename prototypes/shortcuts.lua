@@ -5,7 +5,7 @@
 local const = require('lib.constants')
 
 data:extend {
-    ---@type ShortcutPrototype
+    ---@type data.ShortcutPrototype
     {
         type = 'shortcut',
         name = const.hotkey_names.toggle_display,

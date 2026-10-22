@@ -155,10 +155,11 @@ local function on_configuration_changed()
     This.TrainTracker:resync()
 
     for player_index, player in pairs(game.players) do
+        ---@cast player_index uint32
         This.Gui.closeGui(player)
 
         ---@type tt.PlayerStorage?
-        local player_data = Player.pdata(player_index)
+        local player_data = Player.pdata(player_index) --[[@as tt.PlayerStorage]]
         if player_data then
             player_data.tab_state = nil
             player_data.tab = nil
@@ -196,7 +197,9 @@ end
 ---@return string next entity type to process
 local function next_entity(ticker)
     ticker.entity_type = next(const.entity_types, ticker.entity_type) or next(const.entity_types)
-    return ticker.entity_type
+    local entity_type = ticker.entity_type
+    ---@cast entity_type -?
+    return entity_type
 end
 
 local function onTick()

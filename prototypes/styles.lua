@@ -2,11 +2,10 @@
 -- custom gui styles
 --------------------------------------------------------------------------------
 
-local util = require('util')
-
 if not data.raw['gui-style'] then return end
 
 local styles = data.raw['gui-style'].default
+---@cast styles -?
 
 local empty_checkmark = {
     filename = '__core__/graphics/empty.png',

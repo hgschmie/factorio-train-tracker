@@ -58,7 +58,7 @@ end
 -- other constants
 --------------------------------------------------------------------------------
 
----@type table<string, string>
+---@type {trains: string, ships: string}
 Constants.entity_types = {
     trains = 'trains',
     ships = 'ships',
@@ -126,7 +126,7 @@ function Constants.formatTime(tick_value)
     return ('%02d:%02d:%05.2fs'):format(hours, minutes, seconds)
 end
 
----@alias tt.DropDownFunction fun(train_info: tt.TrainInfo, entity_type: string?, player: LuaPlayer?): string?
+---@alias tt.DropDownFunction fun(train_info: tt.TrainInfo, entity_type: string, player: LuaPlayer): string?
 ---@type tt.DropDownFunction[]
 Constants.filter_dropdown_values = {
     function(train_info) return tostring(train_info.train_id) end,
@@ -137,7 +137,7 @@ Constants.filter_dropdown_values = {
     function(train_info, entity_type, player)
         local state = train_info.last_state
         if not state then return nil end
-        local key = Constants.trainStateKey(train_info.last_state, entity_type)
+        local key = Constants.trainStateKey(state, entity_type)
         return Framework.translation_manager:translate(player, Constants:locale(key))
     end
 }
@@ -190,7 +190,9 @@ Constants.settings_keys = {
     'use_named_temp_stops',
 }
 
+---@type table<string, string>
 Constants.settings_names = {}
+---@type table<string, string>
 Constants.settings = {}
 
 for _, key in pairs(Constants.settings_keys) do

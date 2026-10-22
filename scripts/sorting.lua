@@ -63,6 +63,7 @@ end
 
 ---@param a string?
 ---@param b string?
+---@return integer
 local function compare_string(a, b)
     if not a then return (b and -1 or 0) end
     if not b then return 1 end
@@ -78,7 +79,7 @@ end
 ---@param value (integer|string)?
 ---@return string
 local function format_string(value)
-    return value and tostring(value) or nil
+    return value and tostring(value) or ''
 end
 
 ---@param freight tt.Freight?
@@ -105,6 +106,7 @@ local function freight_formatter(freight, parent, name)
 
     local add_freight_item = function(key)
         local freight_item = freight[key]
+        ---@cast freight_item -?
         local type = freight_item.type
 
         child.add {
@@ -338,7 +340,7 @@ Sorting.tab_info = {
             if result ~= 0 then return result end
             return compare_train_id(a, b)
         end,
-        formatter = function(train_info, entity_type, parent, name)
+        formatter = function(train_info, _entity_type, parent, name)
             return freight_formatter(train_info.current_freight, parent, name)
         end,
         alignment = 'left',
@@ -352,7 +354,7 @@ Sorting.tab_info = {
             if result ~= 0 then return result end
             return compare_train_id(a, b)
         end,
-        formatter = function(train_info, entity_type, parent, name)
+        formatter = function(train_info, _entity_type, parent, name)
             return freight_formatter(train_info.total_freight, parent, name)
         end,
         alignment = 'left',

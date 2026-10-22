@@ -45,6 +45,7 @@ end
 
 ---@param station_name string the station name
 ---@param candidate_rails table<integer, boolean>
+---@return (LuaEntity|string)?
 local function find_station(station_name, candidate_rails)
     local candidates = game.train_manager.get_train_stops {
         is_connected_to_rail = true,
@@ -73,6 +74,8 @@ function TrainTracker:getNextStation(train)
     ---@type ScheduleRecord[]
     local records = train.schedule.records
     local index = train.schedule.current
+    local current_record = records[index]
+    ---@cast current_record -?
 
     ---@type table<uint64, boolean>
     local candidate_rails = {}
