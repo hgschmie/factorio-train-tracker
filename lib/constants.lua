@@ -6,6 +6,7 @@
 
 local table = require('stdlib.utils.table')
 
+---@class tt.Constants
 local Constants = {
     prefix = 'hps__tt-',
     log_prefix = 'TT',

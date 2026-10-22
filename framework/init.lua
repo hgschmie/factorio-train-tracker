@@ -30,6 +30,11 @@ local Is = require('stdlib.utils.is')
 ---@field RemoteApis ff2.RemoteApisManager
 ---@field ExportedApis table<string, function>
 ---@field render FrameworkRender
+---@field post_settings_stage fun()
+---@field post_data_stage fun()
+---@field post_data_updates_stage fun()
+---@field post_data_final_fixes_stage fun()
+---@field post_runtime_stage fun()
 local FrameworkInit = {
     --- The non-localised prefix (textual ID) of this mod.
     -- Must be set as the earliest possible time, as virtually all other framework parts use this.

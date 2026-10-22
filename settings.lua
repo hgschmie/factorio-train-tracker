@@ -27,5 +27,4 @@ local framework_settings = {
 
 data:extend(framework_settings)
 
----@diagnostic disable-next-line: undefined-field
 Framework.post_settings_stage()

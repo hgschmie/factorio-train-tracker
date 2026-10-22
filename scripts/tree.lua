@@ -2,13 +2,16 @@
 -- Sorted tree implementation
 ------------------------------------------------------------------------
 
+---@alias tree_comparator fun(a: any, b: any): integer
+
 ---@class TreeNode
 ---@field left TreeNode?
 ---@field right TreeNode?
 ---@field value any?
 
 ---@class Tree
----@field comparator fun(a: any, b: any): integer
+---@field comparator tree_comparator
+---@field reverse boolean
 ---@field root TreeNode
 ---@field add (fun(self: Tree, value: any))?
 ---@field traverse (fun(self: Tree, sink: (fun(value: any): boolean), limit: number?))?
@@ -16,10 +19,12 @@
 
 local Tree_MT = {}
 
-Tree_MT.__index = function(t, k)
+Tree_MT.__index = function(_t, k)
     return Tree_MT[k]
 end
 
+---@param comparator tree_comparator
+---@param reverse boolean
 ---@return Tree
 function Tree_MT.create(comparator, reverse)
     ---@type Tree
@@ -35,6 +40,7 @@ end
 ---@value any
 function Tree_MT:add(value)
     assert(value)
+    ---@cast self Tree
     self:add_node(self.root, value)
 end
 
@@ -46,6 +52,7 @@ function Tree_MT:add_node(node, value)
         return
     end
 
+    ---@cast self Tree
     local result = self.comparator(value, node.value)
     if self.reverse then result = -result end
 
@@ -73,6 +80,7 @@ end
 function Tree_MT:traverse(callback, limit)
     assert(callback)
     limit = limit or -1
+    ---@cast self Tree
     return self:traverse_tree(self.root, callback, limit)
 end
 
