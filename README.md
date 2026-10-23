@@ -69,6 +69,8 @@ To support other mods, they should
 
 Space Exploration provides the "old train" id as a number and the "new train" information as a `LuaTrain` object. If you want to implement an API for your mod, you should model your API on the Space Exploration API.
 
+Starting with 2.3.0, [Rift Rail][https://mods.factorio.com/mod/RiftRail] is supported, which seems to work similar to Space Exploration.
+
 ----
 
 ## Credits

@@ -1,12 +1,15 @@
 ---------------------------------------------------------------------------------------------------
-Version: 2.2.2
+Version: 2.3.0
 Date: ????
+  Major Features:
+    - add support for Rift Rail (contributed by @VariousTrick on github, thank you!)
   Changes:
     - make sure that console commands work on headless servers
 ---------------------------------------------------------------------------------------------------
 Version: 2.2.1
 Date: 2026-08-20
   Changes:
+    - no user visible changes, only code refactoring
 ---------------------------------------------------------------------------------------------------
 Version: 2.2.0
 Date: 2026-08-11

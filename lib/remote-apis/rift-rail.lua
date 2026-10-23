@@ -4,7 +4,14 @@
 
 local Event = require('stdlib.event.event')
 
----@class RRTrainDepartingEvent
+---@class (partial) LuaRemote.InterfaceMap
+---@field RiftRail RiftRail.RemoteInterface
+
+---@class RiftRail.RemoteInterface
+---@field get_train_departing_event fun(): defines.events
+---@field get_train_arrived_event fun(): defines.events
+
+---@class RRTrainDepartingEvent: EventData
 ---@field train LuaTrain
 ---@field train_id integer
 ---@field source_teleporter LuaEntity
@@ -12,7 +19,7 @@ local Event = require('stdlib.event.event')
 ---@field source_surface LuaSurface
 ---@field source_surface_index integer
 
----@class RRTrainArrivedEvent
+---@class RRTrainArrivedEvent: EventData
 ---@field train LuaTrain
 ---@field train_id integer
 ---@field old_train_id integer
@@ -35,7 +42,11 @@ local function rr_teleport_started(event)
     local train = event.train
     local train_info = This.TrainTracker:beginClone(train, event.train_id)
     if train_info then
-        train_info.current_station = train_info.next_station
+        if not type(train_info) == 'string' then
+            ---@cast train_info.next_station LuaEntity
+            train_info.current_station = train_info.next_station
+        end
+
         This.TrainTracker:arrivalUpdate(train, train_info, game.tick - train_info.last_tick)
     end
 end
@@ -70,8 +81,8 @@ local function rr_init()
     assert(remote.interfaces['RiftRail']['get_train_departing_event'], 'RiftRail present but no get_train_departing_event interface')
     assert(remote.interfaces['RiftRail']['get_train_arrived_event'], 'RiftRail present but no get_train_arrived_event interface')
 
-    Event.on_event(remote.call('RiftRail', 'get_train_departing_event'), rr_teleport_started)
-    Event.on_event(remote.call('RiftRail', 'get_train_arrived_event'), rr_teleport_finished)
+    Event.register(remote.call('RiftRail', 'get_train_departing_event'), rr_teleport_started)
+    Event.register(remote.call('RiftRail', 'get_train_arrived_event'), rr_teleport_finished)
 
     This.TrainTracker:registerBlacklist(blacklist_rift_rail_leader)
 end
