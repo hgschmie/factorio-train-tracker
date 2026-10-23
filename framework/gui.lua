@@ -45,7 +45,7 @@ require('stdlib.utils.string')
 ---@field custominput_events framework.custominput_events? Map of all known custom input events
 ---@field context framework.gui.context? Context element
 ---@field entity_id number? The entity for which a gui is created
----@field player_index number
+---@field player_index integer
 
 ---@class framework.gui
 ---@field type string The GUI type for dispatching events.
@@ -106,6 +106,7 @@ function FrameworkGui:registerHandlers(gui_element, extras)
     if not extras.handler then return end
 
     local handlers = extras.handler
+    ---@cast handlers -?
     local handler_name = gui_element.name
 
     for event, handler in pairs(handlers) do

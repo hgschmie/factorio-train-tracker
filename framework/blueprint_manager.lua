@@ -96,6 +96,7 @@ end
 function FrameworkBlueprintManager:createEntityMap(entities, context)
     if not entities then return {} end
 
+    ---@type table<framework.tools.EntityKey, LuaEntity>
     local entity_map = {}
     for idx, entity in pairs(entities) do
         ---@type framework.blueprint.MapCallback?

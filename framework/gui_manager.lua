@@ -122,6 +122,7 @@ function FrameworkGuiManager:executeGuiHandler(handler_id, event, gui)
     -- find the event mapping for the GUI
     local gui_definition = assert(self.known_gui_types[gui.type])
     if not gui_definition.events then return false end
+    ---@cast gui_definition.events -?
     local event_handler = gui_definition.events[handler_id]
     if not event_handler then return false end
     event_handler(event, gui)
@@ -480,7 +481,7 @@ local function register_events()
     for name, id in pairs(defines.events) do
         ---@diagnostic disable-next-line: undefined-field
         if name:starts_with('on_gui_') then
-            Event.on_event(id, function(ev)
+            Event.register(id, function(ev)
                 Framework.gui_manager:dispatch(
                     ev --[[@as framework.gui.event_data]]
                 )
@@ -492,7 +493,7 @@ local function register_events()
     for name in pairs(prototypes.custom_input) do
         ---@diagnostic disable-next-line: undefined-field
         if name:starts_with(Framework.PREFIX) then
-            Event.on_event(name, onCustomInputEvent)
+            Event.register(name, onCustomInputEvent)
         end
     end
 

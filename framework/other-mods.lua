@@ -14,6 +14,11 @@
 ----------------------------------------------------------------------------------------------------
 
 ---@class framework.OtherModsManager
+---@field settings fun()
+---@field data fun()
+---@field data_updates fun()
+---@field data_final_fixes fun()
+---@field runtime fun()
 local OtherMods = {}
 
 local OtherMods_mt = {

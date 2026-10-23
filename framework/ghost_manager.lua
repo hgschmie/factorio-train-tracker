@@ -56,6 +56,8 @@ end
 ---@param player_index integer?
 ---@return ff2.ghost_manager.PreBuild? pre_build
 function FrameworkGhostManager:getPreBuild(player_index)
+    if not player_index then return nil end
+
     local state = self:state()
     local pre_build = state.pre_build[player_index]
     if not pre_build or pre_build.tick ~= game.tick then return nil end
@@ -171,7 +173,10 @@ local function on_ghost_entity_created(event)
 
     script.register_on_object_destroyed(entity)
 
-    FrameworkGhostManager:registerGhost(entity, event.player_index)
+    ---@type uint32?
+    local player_index = event.player_index
+
+    FrameworkGhostManager:registerGhost(entity, player_index)
 end
 
 ---@param event EventData.on_post_entity_died

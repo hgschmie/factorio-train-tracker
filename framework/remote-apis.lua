@@ -11,6 +11,11 @@ assert(Framework)
 -- Factorio Framework 2 (ff2)
 
 ---@class ff2.RemoteApisManager
+---@field settings fun()
+---@field data fun()
+---@field data_updates fun()
+---@field data_final_fixes fun()
+---@field runtime fun()
 local RemoteApis = {
     runtime = function()
         assert(script)

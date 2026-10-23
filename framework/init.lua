@@ -83,10 +83,12 @@ end
 function FrameworkInit:init(config)
     assert(Is.Function(config) or Is.Table(config), 'configuration must either be a table or a function that provides a table')
     if Is.Function(config) then
-        ---@diagnostic disable-next-line: call-non-callable
-        config = config()
+        local config_fun = config
+        ---@cast config_fun fun(): FrameworkConfig
+        config = config_fun()
     end
 
+    ---@cast config FrameworkConfig
     assert(config, 'no configuration provided')
     assert(config.name, 'config.name must contain the mod name')
     assert(config.prefix, 'config.prefix must contain the mod prefix')
@@ -132,7 +134,6 @@ local prototype = {}
 for _, game_stage in pairs(game_stages) do
     prototype['post_' .. game_stage .. '_stage'] = function()
         -- otherwise, it is an stage method, pass it to the submodules
-        ---@diagnostic disable-next-line: undefined-field
         FrameworkInit.other_mods[game_stage]() -- other-mods subsystem
         FrameworkInit.RemoteApis[game_stage]() -- remote-apis subsystem
     end

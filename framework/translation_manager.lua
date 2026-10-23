@@ -60,7 +60,7 @@ local function trigger_translation(player)
 
         assert(table_size(req) <= FrameworkTranslationManager.DEFAULT_REQUEST_SIZE)
 
-        if #req then
+        if #req > 0 then
             local ids = assert(player.request_translations(req))
             for _, id in pairs(ids) do
                 translation.active_ids[id] = true

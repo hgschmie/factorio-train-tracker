@@ -107,7 +107,6 @@ end
 
 ---@param tombstone_key ff2.tombstone.Tombstone|ff2.tombstone.TombstoneKey
 ---@return ff2.tombstone.Tombstone? tombstone
----@return ff2.tombstone.Tombstone? tombstone
 local function get_tombstone(tombstone_key)
     assert(tombstone_key.name)
 
@@ -172,7 +171,7 @@ function FrameworkTombstoneManager:retrieveTombstoneFromBlueprintEntity(blueprin
         surface_index = surface_index,
         name = blueprint_entity.name,
         type = prototype.type,
-    }  --[[@as ff2.tombstone.TombstoneKey ]]
+    }
 
     if not tombstone then return end
 
@@ -214,7 +213,7 @@ function FrameworkTombstoneManager:applyCallbackForEntity(entity)
         surface_index = entity.surface_index,
         type = tools.getType(entity),
         name = name,
-    } --[[@as ff2.tombstone.TombstoneKey ]]
+    }
 
     if not tombstone then return end
 
@@ -253,7 +252,7 @@ local function creation_events(event)
         surface_index = entity.surface_index,
         type = tools.getType(entity),
         name = tools.getName(entity),
-    } --[[@as ff2.tombstone.TombstoneKey ]]
+    }
 
     if not tombstone then return end
 
