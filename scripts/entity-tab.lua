@@ -390,8 +390,8 @@ local function create_gui_pane(entity_type)
                     local checkbox = train_table.children[i]
                     ---@cast checkbox -?
                     local value = checkbox.tags.value
-                    ---@cast value tt.SortColumn?
                     if value then
+                        ---@cast value tt.SortColumn
                         checkbox.style = (tab_state.sort == value) and 'tt_selected_sort_checkbox' or 'tt_sort_checkbox'
                         checkbox.state = tab_state.sort_mode[value] or false
                     end
