@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.3.0
-Date: ????
+Date: 2026-10-23
   Major Features:
     - add support for Rift Rail (contributed by @VariousTrick on github, thank you!)
   Changes:
