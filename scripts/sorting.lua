@@ -41,13 +41,13 @@ for _, key in pairs(Sorting.keys) do
     Sorting.sorting[key] = key --[[@as tt.SortColumn ]]
 end
 
----@alias tt.Formatter fun(train_info: tt.TrainInfo, entity_type: string?, parent: LuaGuiElement, name: string?): string|LocalisedString|nil
+---@alias tt.Formatter fun(train_info: tt.TrainInfo, entity_type: string, parent: LuaGuiElement, name: string): string|LocalisedString|nil
 
 ---@class tt.TabInfo
 ---@field comparator (fun(a: tt.TrainInfo, b: tt.TrainInfo): integer)?
 ---@field formatter tt.Formatter
 ---@field tags (fun(gui: framework.gui, train_info: tt.TrainInfo) : Tags?)?
----@field alignment Alignment
+---@field alignment ('left'|'center'|'right')
 ---@field tooltip string?
 ---@field raw boolean?
 

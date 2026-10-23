@@ -77,10 +77,8 @@ end
 ---@param gui framework.gui
 ---@return framework.gui.element_definitions ui
 function Gui.getUi(gui)
-    ---@type LuaPlayer, tt.PlayerStorage
-    local player, player_data = Player.get(gui.player_index)
-    assert(player)
-    assert(player_data)
+    local player = Player.get(gui.player_index)
+    ---@cast player -?
 
     local gui_events = gui.gui_events
     local max_height = ((player.display_resolution.height / player.display_scale) - 80) / 2
@@ -234,14 +232,13 @@ end
 ---
 ---@param event EventData.on_gui_click|EventData.on_gui_closed
 function Gui.onWindowClosed(event)
-    local player = assert(Player.get(event.player_index))
+    local player = Player.get(event.player_index)
     Gui.closeGui(player)
 end
 
 ---@param event EventData.on_gui_selected_tab_changed
-function Gui.onTabChanged(event)
-    local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
-
+---@param gui framework.gui
+function Gui.onTabChanged(event, gui)
     local tab_index = event.element.selected_tab_index
     ---@cast tab_index -?
     local tab = assert(event.element.tabs[tab_index])
@@ -278,9 +275,8 @@ function Gui.onTabChanged(event)
 end
 
 ---@param event EventData.on_gui_checked_state_changed
-function Gui.onSort(event)
-    local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
-
+---@param gui framework.gui
+function Gui.onSort(event, gui)
     local player_data = Player.pdata(gui.player_index) --[[@as tt.PlayerStorage]]
 
     local entity_type = assert(player_data.tab)
@@ -290,9 +286,8 @@ function Gui.onSort(event)
 end
 
 ---@param event EventData.on_gui_click
-function Gui.onClickEntity(event)
-    local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
-
+---@param gui framework.gui
+function Gui.onClickEntity(event, gui)
     local player_data = Player.pdata(gui.player_index) --[[@as tt.PlayerStorage]]
 
     local entity_type = assert(player_data.tab)
@@ -302,9 +297,8 @@ function Gui.onClickEntity(event)
 end
 
 ---@param event EventData.on_gui_click
-function Gui.onClickLastStation(event)
-    local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
-
+---@param gui framework.gui
+function Gui.onClickLastStation(event, gui)
     local player_data = Player.pdata(gui.player_index) --[[@as tt.PlayerStorage]]
 
     local entity_type = assert(player_data.tab)
@@ -314,9 +308,8 @@ function Gui.onClickLastStation(event)
 end
 
 ---@param event EventData.on_gui_click
-function Gui.onClickCurrentStation(event)
-    local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
-
+---@param gui framework.gui
+function Gui.onClickCurrentStation(event, gui)
     local player_data = Player.pdata(gui.player_index) --[[@as tt.PlayerStorage]]
 
     local entity_type = assert(player_data.tab)
@@ -326,9 +319,8 @@ function Gui.onClickCurrentStation(event)
 end
 
 ---@param event EventData.on_gui_click
-function Gui.onClickNextStation(event)
-    local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
-
+---@param gui framework.gui
+function Gui.onClickNextStation(event, gui)
     local player_data = Player.pdata(gui.player_index) --[[@as tt.PlayerStorage]]
 
     local entity_type = assert(player_data.tab)
@@ -338,9 +330,8 @@ function Gui.onClickNextStation(event)
 end
 
 ---@param event EventData.on_gui_selection_state_changed
-function Gui.onLimitChanged(event)
-    local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
-
+---@param gui framework.gui
+function Gui.onLimitChanged(event, gui)
     local player_data = Player.pdata(gui.player_index) --[[@as tt.PlayerStorage]]
 
     local tab_state = assert(player_data.tab_state[player_data.tab])
@@ -351,9 +342,8 @@ function Gui.onLimitChanged(event)
 end
 
 ---@param event EventData.on_gui_selection_state_changed
-function Gui.onFilterFieldChanged(event)
-    local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
-
+---@param gui framework.gui
+function Gui.onFilterFieldChanged(event, gui)
     local player_data = Player.pdata(gui.player_index) --[[@as tt.PlayerStorage]]
 
     local entity_type = player_data.tab
@@ -370,9 +360,8 @@ function Gui.onFilterFieldChanged(event)
 end
 
 ---@param event EventData.on_gui_text_changed
-function Gui.onFilterTextChanged(event)
-    local gui = assert(Framework.gui_manager:findGui(event.player_index, Gui.NAME))
-
+---@param gui framework.gui
+function Gui.onFilterTextChanged(event, gui)
     local player_data = Player.pdata(gui.player_index) --[[@as tt.PlayerStorage]]
 
     local tab_state = assert(player_data.tab_state[player_data.tab])
@@ -389,8 +378,7 @@ end
 
 --- @param player LuaPlayer
 function Gui.openGui(player)
-
-    local player_data = Player.pdata(player.index) --[[@as tt.PlayerStorage]]
+ local player_data = Player.pdata(player.index) --[[@as tt.PlayerStorage]]
 
     player_data.tab_state = player_data.tab_state or {}
 
@@ -424,7 +412,7 @@ function Gui.openGui(player)
 end
 
 function Gui.closeGui(player)
-    local player_data = Player.pdata(player.player_index) --[[@as tt.PlayerStorage]]
+    local player_data = Player.pdata(player.index) --[[@as tt.PlayerStorage]]
     Framework.gui_manager:destroyGui(player.index, Gui.NAME)
 
     player_data.toggle = false
@@ -506,21 +494,23 @@ end
 
 ---@param event EventData.CustomInputEvent
 local function toggle_hotkey(event)
-    local player = assert(Player.get(event.player_index))
+    local player = Player.get(event.player_index)
+    ---@cast player -?
     Gui.toggleGui(player)
 end
 
 ---@param event EventData.on_lua_shortcut
 local function toggle_shortcut(event)
     if event.prototype_name ~= const.hotkey_names.toggle_display then return end
-    local player = assert(Player.get(event.player_index))
+    local player = Player.get(event.player_index)
+    ---@cast player -?
     Gui.toggleGui(player)
 end
 
 local function init_gui()
     Framework.gui_manager:registerGuiType(Gui.NAME, get_gui_event_definition())
-    Event.on_event(const.hotkey_names.toggle_display, toggle_hotkey)
-    Event.on_event(defines.events.on_lua_shortcut, toggle_shortcut)
+    Event.register(const.hotkey_names.toggle_display, toggle_hotkey)
+    Event.register(defines.events.on_lua_shortcut, toggle_shortcut)
 end
 
 Event.on_init(init_gui)

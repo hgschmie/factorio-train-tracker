@@ -47,7 +47,8 @@ end
 ---@param candidate_rails table<integer, boolean>
 ---@return (LuaEntity|string)?
 local function find_station(station_name, candidate_rails)
-    local candidates = game.train_manager.get_train_stops {
+
+ local candidates = game.train_manager.get_train_stops {
         is_connected_to_rail = true,
         station_name = station_name
     }
@@ -56,7 +57,7 @@ local function find_station(station_name, candidate_rails)
     if #candidates == 1 then return candidates[1] end
 
     -- that should never happen, but one never knows...
-    if #candidates == 0 then return station_name end
+    if #candidates == 0 or table_size(candidate_rails) == 0 then return station_name end
 
     -- find the station where the rail is connected
     for _, station in pairs(candidates) do
@@ -82,16 +83,17 @@ function TrainTracker:getNextStation(train)
 
     if train.path_end_rail then candidate_rails[train.path_end_rail.unit_number] = true end
 
-    if records[index].station and train.state ~= defines.train_state.wait_station then return find_station(records[index].station, candidate_rails) end
+    if current_record.station and train.state ~= defines.train_state.wait_station then return find_station(current_record.station, candidate_rails) end
 
-    local schedule_size = table_size(records)
-    for i = 1, schedule_size - 1 do
-        local rail = records[index].rail
-        index = math.one_mod(index + 1, schedule_size)
 
-        if records[index].station then
+    for _ = 1, #records - 1 do
+        local rail = current_record.rail
+        index = math.one_mod(index + 1, #records)
+        current_record = records[index] --[[@as ScheduleRecord]]
+
+        if current_record.station then
             if rail then candidate_rails[rail.unit_number] = true end
-            return find_station(records[index].station, candidate_rails)
+            return find_station(current_record.station, candidate_rails)
         end
     end
 

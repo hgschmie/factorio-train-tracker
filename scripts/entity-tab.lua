@@ -20,8 +20,7 @@ local Sorting = require('scripts.sorting')
 ---@param tab_name    string
 ---@param sort_value  tt.SortColumn sorted value constant
 local function add_checkbox(gui, element, entity_type, tab_name, sort_value)
-    ---@type tt.PlayerStorage
-    local player_data = assert(Player.pdata(gui.player_index))
+    local player_data = Player.pdata(gui.player_index) --[[@as tt.PlayerStorage]]
 
     local tab_state = assert(player_data.tab_state[entity_type])
     local style = (tab_state.sort == sort_value) and 'tt_selected_sort_checkbox' or 'tt_sort_checkbox'
@@ -185,21 +184,22 @@ local function create_gui_pane(entity_type)
         end,
 
         onSort = function(event, gui)
-            ---@type tt.PlayerStorage
-            local player_data = assert(Player.pdata(gui.player_index))
+            local player_data = Player.pdata(gui.player_index) --[[@as tt.PlayerStorage]]
             local tab_state = player_data.tab_state[entity_type]
+            ---@cast tab_state -?
 
             tab_state.sort = event.element.tags.value --[[@as tt.SortColumn ]]
             tab_state.sort_mode[tab_state.sort] = event.element.state
 
-            ---@type tt.GuiContext
-            local context = gui.context
+            local context = gui.context --[[@as tt.GuiContext ]]
             context.pacer = 0
         end,
         onClickEntity = function(event, gui)
-            local player = assert(Player.get(gui.player_index))
+            local player = Player.get(gui.player_index)
+            ---@cast player -?
 
-            local train_id = assert(event.element.tags.id)
+            local train_id = event.element.tags.id
+            ---@cast train_id integer
             local train = game.train_manager.get_train_by_id(train_id)
             if not (train and train.valid) then return end
             local loco = const.getMainLocomotive(train)
@@ -219,9 +219,11 @@ local function create_gui_pane(entity_type)
             end
         end,
         onClickLastStation = function(event, gui)
-            local player = assert(Player.get(gui.player_index))
+            local player = Player.get(gui.player_index)
+            ---@cast player -?
 
-            local train_id = assert(event.element.tags.id)
+            local train_id = event.element.tags.id
+            ---@cast train_id integer
             local train_info = This.TrainTracker:getEntity(entity_type, train_id)
             if not train_info then return end
 
@@ -240,9 +242,11 @@ local function create_gui_pane(entity_type)
             end
         end,
         onClickCurrentStation = function(event, gui)
-            local player = assert(Player.get(gui.player_index))
+            local player = Player.get(gui.player_index)
+            ---@cast player -?
 
-            local train_id = assert(event.element.tags.id)
+            local train_id = event.element.tags.id
+            ---@cast train_id integer
             local train_info = This.TrainTracker:getEntity(entity_type, train_id)
             if not train_info then return end
 
@@ -261,9 +265,11 @@ local function create_gui_pane(entity_type)
             end
         end,
         onClickNextStation = function(event, gui)
-            local player = assert(Player.get(gui.player_index))
+            local player = Player.get(gui.player_index)
+            ---@cast player -?
 
-            local train_id = assert(event.element.tags.id)
+            local train_id = event.element.tags.id
+            ---@cast train_id integer
             local train_info = This.TrainTracker:getEntity(entity_type, train_id)
             if not train_info then return end
 
@@ -289,15 +295,18 @@ local function create_gui_pane(entity_type)
 
             local player, player_data = Player.get(gui.player_index)
             ---@cast player_data tt.PlayerStorage
-            assert(player)
-            assert(player_data)
 
             local trains = This.TrainTracker:entities(entity_type)
 
             local tab_state = player_data.tab_state[entity_type]
             ---@cast tab_state -?
 
-            local comparator = assert(Sorting.tab_info[tab_state.sort].comparator)
+            local sort_tab_info = Sorting.tab_info[tab_state.sort]
+            ---@cast sort_tab_info -?
+
+            local comparator = sort_tab_info.comparator
+            ---@cast comparator -?
+
             local tree = Tree.create(comparator, tab_state.sort_mode[tab_state.sort])
 
             for _, train_info in pairs(trains) do

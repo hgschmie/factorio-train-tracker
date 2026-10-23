@@ -34,8 +34,11 @@ local function se_teleport_started(event)
     local train = event.train
     local train_info = This.TrainTracker:beginClone(train, event.old_train_id_1)
     if train_info then
-        -- reached the space elevator station
-        train_info.current_station = train_info.next_station
+        if not type(train_info) == 'string' then
+            ---@cast train_info.next_station LuaEntity
+            -- reached the space elevator station
+            train_info.current_station = train_info.next_station
+        end
 
         This.TrainTracker:arrivalUpdate(train, train_info, game.tick - train_info.last_tick)
     end
@@ -72,8 +75,8 @@ local function se_init()
     assert(remote.interfaces['space-exploration']['get_on_train_teleport_started_event'], 'LTN present but no on_delivery_failed event')
     assert(remote.interfaces['space-exploration']['get_on_train_teleport_finished_event'], 'LTN present but no on_delivery_failed event')
 
-    Event.on_event(remote.call('space-exploration', 'get_on_train_teleport_started_event'), se_teleport_started)
-    Event.on_event(remote.call('space-exploration', 'get_on_train_teleport_finished_event'), se_teleport_finished)
+    Event.register(remote.call('space-exploration', 'get_on_train_teleport_started_event'), se_teleport_started)
+    Event.register(remote.call('space-exploration', 'get_on_train_teleport_finished_event'), se_teleport_finished)
 
     This.TrainTracker:registerBlacklist(blacklist_se_tug)
 end
