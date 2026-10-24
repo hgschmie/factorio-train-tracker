@@ -51,6 +51,7 @@ function Core.log_and_print(msg)
     end
 end
 
+---@cast script LuaBootstrap?
 if script then
     ---Simple valid check, only available in control stage.
     ---@deprecated
@@ -112,7 +113,7 @@ function Core.help(self)
             end
             if type(tab.__index) == 'function' then
                 tab = tab.__parent
-            elseif type(tab.__index == 'table') then
+            elseif type(tab.__index) == 'table' then
                 tab = tab.__index
             end
         end

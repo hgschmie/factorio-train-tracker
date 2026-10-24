@@ -22,11 +22,6 @@ String.upper = string.upper
 getmetatable('').__index = String -- Allow string syntatic sugar to work with this class
 for k, v in pairs(string) do if not String[k] then String[k] = v end end
 
-local concat = table.concat
-local insert = table.insert
-local ceil = math.ceil
-local abs = math.abs
-
 --- Returns a copy of the string with any leading or trailing whitespace from the string removed.
 ---@param s string the string to remove leading or trailing whitespace from
 ---@return string result a copy of the string without leading or trailing whitespace
@@ -140,9 +135,16 @@ end
 ---@param seq (string|number)[] a table of strings or numbers
 -- @usage (' '):join {1,2,3} == '1 2 3'
 function String.join(s, seq)
-    return concat(seq, s)
+    return table.concat(seq, s)
 end
 
+local ceil = math.ceil
+
+---@param s string
+---@param w integer
+---@param ch string?
+---@param left boolean?
+---@param right boolean?
 local function _just(s, w, ch, left, right)
     local n = #s
     if w > n then
@@ -210,17 +212,19 @@ function String.split(s, sep, pattern, func)
     sep = not pattern and sep:gsub('([^%w])', '%%%1') or sep
     func = func or noop
 
+    ---@type T[]
     local fields = {}
     local start_idx, end_idx = s:find(sep)
+    ---@type integer
     local last_find = 1
     while start_idx do
         local substr = s:sub(last_find, start_idx - 1)
-        if substr:len() > 0 then table.insert(fields, func(s:sub(last_find, start_idx - 1))) end
+        if substr:len() > 0 then fields[#fields + 1] = func(s:sub(last_find, start_idx - 1)) end
         last_find = end_idx + 1
         start_idx, end_idx = s:find(sep, end_idx + 1)
     end
     local substr = s:sub(last_find)
-    if substr:len() > 0 then insert(fields, func(s:sub(last_find))) end
+    if substr:len() > 0 then fields[#fields + 1] = func(s:sub(last_find)) end
     return fields
 end
 
@@ -230,7 +234,7 @@ end
 ---@return string suffix the ordinal suffix
 function String.ordinal_suffix(n, prepend_number)
     if tonumber(n) then
-        n = abs(n) % 100
+        n = math.abs(n) % 100
         local d = n % 10
         if d == 1 and n ~= 11 then
             return (prepend_number and n or '') .. 'st'
@@ -242,9 +246,10 @@ function String.ordinal_suffix(n, prepend_number)
             return (prepend_number and n or '') .. 'th'
         end
     end
-    return prepend_number and n
+    return prepend_number and tostring(n) or ''
 end
 
+---@table<string, number>
 local exponent_multipliers = {
     ['y'] = 0.000000000000000000000001,
     ['z'] = 0.000000000000000000001,
@@ -275,6 +280,7 @@ function String.exponent_number(str)
     if type(str) == 'string' then
         local value, exp = str:match('([%-+]?[0-9]*%.?[0-9]+)([yzafpnumcdhkMGTPEZY]?)') ---@diagnostic disable-line: spell-check
         exp = exp or ' '
+        ---@diagnostic disable-next-line: assign-type-mismatch
         value = (value or 0) * (exponent_multipliers[exp] or 1)
         return value
     elseif type(str) == 'number' then

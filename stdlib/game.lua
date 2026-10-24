@@ -14,7 +14,7 @@ local inspect = _ENV.inspect
 ---@return LuaPlayer? player_instance the player instance
 function Game.get_player(mixed)
     if type(mixed) == 'table' then
-        ---@cast mixed table<string, uint32|string>
+        ---@cast mixed { player_index: uint32?, valid: boolean }
         if mixed.player_index then
             return game.get_player(mixed.player_index)
         elseif mixed.__self and mixed.valid then
@@ -37,7 +37,7 @@ function Game.get_force(mixed)
         end
     elseif type(mixed) == 'string' then
         local force = game.forces[mixed]
-        return (force and force.valid) and force
+        return (force and force.valid) and force or nil
     end
 end
 

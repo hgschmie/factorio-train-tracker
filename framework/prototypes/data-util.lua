@@ -51,7 +51,7 @@ function FrameworkDataUtil.copy_entity_prototype(prototype, new_name, make_invis
         error('Invalid prototype: prototypes must have name and type properties.')
     end
 
-    local p = util.copy(prototype) --[[ @as EntityPrototype ]]
+    local p = util.copy(prototype)
     p.name = new_name
 
     if p.minable and p.minable.result then

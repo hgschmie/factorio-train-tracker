@@ -54,9 +54,9 @@ M.table = M.Table
 
 --- Returns the var if the passed variable is a string.
 ---@param var any The variable to check
----@return any
+---@return string?
 function M.String(var)
-    return type(var) == 'string' and var
+    return type(var) == 'string' and var or nil
 end
 M.string = M.String
 
@@ -317,7 +317,7 @@ M.hex = M.Hex
 ---@param var any The variable to check
 ---@return boolean result true if the passed variable is a single alphbetical word
 function M.StrictWord(var)
-    return M.String(var) and var:find('^[%a]+$') == 1
+    return M.String(var) and var:find('^[%a]+$') == 1 or false
 end
 M.strict_word = M.StrictWord
 
@@ -326,7 +326,7 @@ M.strict_word = M.StrictWord
 ---@param var any The variable to check
 ---@return boolean result true if the passed variable is a single alphbetical word
 function M.AlphabetWord(var)
-    return M.String(var) and var:find('^[%a%_%-]+$') == 1
+    return M.String(var) and var:find('^[%a%_%-]+$') == 1 or false
 end
 M.Word = M.AlphabetWord
 
@@ -335,7 +335,7 @@ M.Word = M.AlphabetWord
 ---@param var any The variable to check
 ---@return boolean result true if the passed variable is a single alphbetical word
 function M.AlphanumWord(var)
-    return M.String(var) and var:find('^%a+[%w%_%-]*$') == 1
+    return M.String(var) and var:find('^%a+[%w%_%-]*$') == 1 or false
 end
 M.Alpha = M.AlphanumWord
 M.alpha = M.AlphanumWord
@@ -397,6 +397,8 @@ setmetatable(
 Is.is_not = Is.Not
 
 -- convenience function for un-lambda-ing deferred error messages
+---@param f any
+---@return string
 local function safe_invoke(f)
     local ok, msg = xpcall(f, debug.traceback)
     if not ok then
@@ -416,7 +418,8 @@ setmetatable(
     {
         __index = function(_, k)
             return M[k] and function(_assert, _message, _level)
-                _level = tonumber(_level) or 3 ---@type integer
+                _level = tonumber(_level) or 3
+                ---@cast _level integer
                 return M[k](_assert) or error(type(_message) == 'function' and safe_invoke(_message) or _message or 'assertion failed', _level)
             end or nil
         end,
@@ -435,7 +438,8 @@ setmetatable(
     {
         __index = function(_, k)
             return M[k] and function(_assert, _message, _level)
-                _level = tonumber(_level) or 3 ---@type integer
+                _level = tonumber(_level) or 3
+                ---@cast _level integer
                 return not M[k](_assert) or error(type(_message) == 'function' and safe_invoke(_message) or _message or 'assertion failed', _level)
             end or nil
         end,

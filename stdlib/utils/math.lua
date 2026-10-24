@@ -90,6 +90,9 @@ Math.MIN_INT64 = Math.MININT64
 Math.MAX_UINT64 = Math.MAXUINT64
 -- ))
 
+---@generic T
+---@param ... T|T[]
+---@return T[]
 local function tuple(...)
     return type(...) == 'table' and ... or { ... }
 end
@@ -137,7 +140,7 @@ end
 -- See: http://en.wikipedia.org/wiki/Average
 
 --- Calculates the sum of a sequence of values.
----@param ... number a tuple of numbers
+---@param ... number|number[] a tuple of numbers
 ---@return number sum the sum
 function Math.sum(...)
     local x = tuple(...)
@@ -151,6 +154,7 @@ end
 ---@return number mean the arithmetic mean
 function Math.arithmetic_mean(...)
     local x = tuple(...)
+    ---@cast x number[]
     return (Math.sum(x) / #x)
 end
 
