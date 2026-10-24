@@ -326,8 +326,7 @@ local function create_gui_pane(entity_type)
             for index, column_name in pairs(columns) do
                 local tab_info = assert(Sorting.tab_info[column_name])
 
-                ---@diagnostic disable-next-line: assign-type-mismatch
-                train_table.style.column_alignments[index] = tab_info.alignment
+                assert(train_table.style.column_alignments)[index] = tab_info.alignment
                 if tab_info.comparator then
                     add_checkbox(gui, train_table, entity_type, tab_name, column_name)
                 else
